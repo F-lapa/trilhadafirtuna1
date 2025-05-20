@@ -140,7 +140,13 @@ if (createUserForm) {
       }
 
       console.log('Verificando e-mail:', email);
-      const signInMethods = await firebase.auth().fetchSignInMethodsForEmail(email);
+      let signInMethods;
+      try {
+        signInMethods = await firebase.auth().fetchSignInMethodsForEmail(email);
+      } catch (verifyError) {
+        console.error('Erro ao verificar e-mail:', verifyError.code, verifyError.message);
+        throw new Error('Não foi possível verificar o e-mail. Tente novamente.');
+      }
       if (signInMethods.length > 0) {
         throw new Error('Este e-mail já está cadastrado. Tente outro.');
       }
@@ -165,7 +171,7 @@ if (createUserForm) {
         });
       } catch (error) {
         console.error('Erro ao gravar em users:', error.code, error.message);
-        throw error;
+        throw new Error(`Erro ao salvar dados do usuário: ${error.message}`);
       }
 
       console.log('Gravando em ranking:', user.uid);
@@ -177,11 +183,10 @@ if (createUserForm) {
         });
       } catch (error) {
         console.error('Erro ao gravar em ranking:', error.code, error.message);
-        throw error;
+        throw new Error(`Erro ao salvar dados de ranking: ${error.message}`);
       }
 
       console.log('Usuário cadastrado com sucesso:', user.uid);
-
       adminMessage.textContent = `Usuário ${name} cadastrado com sucesso!`;
       adminError.textContent = '';
       createUserForm.reset();
@@ -190,30 +195,8 @@ if (createUserForm) {
       }, 3000);
     } catch (error) {
       console.error('Erro ao cadastrar usuário:', error.code, error.message);
-      try {
-        const signInMethods = await firebase.auth().fetchSignInMethodsForEmail(email);
-        if (signInMethods.length > 0) {
-          console.log('Usuário foi criado apesar do erro:', email);
-          adminMessage.textContent = `Usuário ${name} cadastrado com sucesso!`;
-          adminError.textContent = '';
-          createUserForm.reset();
-          setTimeout(() => {
-            adminMessage.textContent = '';
-          }, 3000);
-        } else {
-          throw error;
-        }
-      } catch (verifyError) {
-        console.error('Erro ao verificar e-mail:', verifyError.code, verifyError.message);
-        if (error.code === 'auth/email-already-in-use') {
-          adminError.textContent = 'Este e-mail já está cadastrado. Tente outro.';
-        } else if (error.code === 'permission-denied') {
-          adminError.textContent = 'Permissão negada: Verifique as regras do Firestore ou tente novamente.';
-        } else {
-          adminError.textContent = `Erro: ${error.message}`;
-        }
-        adminMessage.textContent = '';
-      }
+      adminError.textContent = error.message;
+      adminMessage.textContent = '';
     }
   });
 }
@@ -286,6 +269,10 @@ function loadChallenges(userId, isAdmin) {
   db.collection('challenges').orderBy('createdAt', 'desc').onSnapshot((snapshot) => {
     console.log('Desafios atualizados:', snapshot.docs.length, 'desafios');
     challengesList.innerHTML = '';
+    if (snapshot.empty) {
+      challengesList.innerHTML = '<p>Nenhum desafio disponível no momento.</p>';
+      return;
+    }
     snapshot.forEach((doc) => {
       const challenge = doc.data();
       const challengeId = doc.id;
@@ -340,7 +327,7 @@ function loadChallenges(userId, isAdmin) {
     });
   }, (error) => {
     console.error('Erro ao carregar desafios:', error.code, error.message);
-    alert('Erro ao carregar desafios: ' + error.message);
+    challengesList.innerHTML = `<p>Erro ao carregar desafios: ${error.message}</p>`;
   });
 }
 
@@ -353,7 +340,8 @@ async function loadSubmissions() {
     return;
   }
   if (currentUser.email !== 'fernandolapa1987@gmail.com') {
-    console.error('Acesso negado: Apenas administradores podem carregar submissões.');
+    console.log('Acesso negado: Apenas administradores podem carregar submissões.');
+    document.getElementById('submissions-list').innerHTML = '<p>Acesso negado: Apenas administradores podem visualizar submissões.</p>';
     return;
   }
 
@@ -363,25 +351,28 @@ async function loadSubmissions() {
     console.log('Token de autenticação para submissões:', token.substring(0, 10) + '...');
 
     const submissionsList = document.getElementById('submissions-list');
-
-    const submissionsSnapshot = await db.collection('submissions').limit(1).get();
+    const submissionsSnapshot = await db.collection('submissions').where('status', '==', 'pending').get();
+    
     if (submissionsSnapshot.empty) {
-      console.log('Coleção submissions está vazia ou não existe.');
+      console.log('Nenhuma submissão pendente encontrada.');
       submissionsList.innerHTML = '<p>Nenhuma submissão pendente.</p>';
-    } else {
-      db.collection('submissions')
-        .where('status', '==', 'pending')
-        .onSnapshot((snapshot) => {
-          console.log('Submissões pendentes recebidas:', snapshot.docs.length);
-          submissionsList.innerHTML = '';
-          if (snapshot.empty) {
-            console.log('Nenhuma submissão pendente encontrada.');
-            submissionsList.innerHTML = '<p>Nenhuma submissão pendente.</p>';
-          }
-          snapshot.forEach(async (doc) => {
-            const submission = doc.data();
-            const submissionId = doc.id;
-            console.log('Processando submissão:', submissionId, 'Dados:', submission);
+      return;
+    }
+
+    db.collection('submissions')
+      .where('status', '==', 'pending')
+      .onSnapshot((snapshot) => {
+        console.log('Submissões pendentes recebidas:', snapshot.docs.length);
+        submissionsList.innerHTML = '';
+        if (snapshot.empty) {
+          submissionsList.innerHTML = '<p>Nenhuma submissão pendente.</p>';
+          return;
+        }
+        snapshot.forEach(async (doc) => {
+          const submission = doc.data();
+          const submissionId = doc.id;
+          console.log('Processando submissão:', submissionId, 'Dados:', submission);
+          try {
             const userDoc = await db.collection('users').doc(submission.userId).get();
             const userName = userDoc.exists ? userDoc.data().name : 'Desconhecido';
             const challengeDoc = await db.collection('challenges').doc(submission.challengeId).get();
@@ -400,15 +391,17 @@ async function loadSubmissions() {
               </div>
             `;
             submissionsList.appendChild(card);
-          });
-        }, (error) => {
-          console.error('Erro ao carregar submissões:', error.code, error.message);
-          alert('Erro ao carregar submissões: ' + error.message);
+          } catch (error) {
+            console.error('Erro ao processar submissão:', submissionId, error.code, error.message);
+          }
         });
-    }
+      }, (error) => {
+        console.error('Erro ao carregar submissões:', error.code, error.message);
+        submissionsList.innerHTML = `<p>Erro ao carregar submissões: ${error.message}</p>`;
+      });
   } catch (error) {
     console.error('Erro ao verificar submissões:', error.code, error.message);
-    alert('Erro ao acessar submissões: ' + error.message);
+    document.getElementById('submissions-list').innerHTML = `<p>Erro ao acessar submissões: ${error.message}</p>`;
   }
 }
 
@@ -431,6 +424,9 @@ async function reviewSubmission(submissionId, userId, status) {
       const rankingDoc = db.collection('ranking').doc(userId);
       await db.runTransaction(async (transaction) => {
         const userData = await transaction.get(userDoc);
+        if (!userData.exists) {
+          throw new Error('Usuário não encontrado.');
+        }
         const newPoints = (userData.data().points || 0) + 10;
         transaction.update(userDoc, { points: newPoints });
         transaction.update(rankingDoc, { points: newPoints });
@@ -472,6 +468,10 @@ function loadRanking(isAdmin) {
     .onSnapshot((snapshot) => {
       console.log('Ranking atualizado:', snapshot.docs.length, 'usuários');
       rankingBody.innerHTML = '';
+      if (snapshot.empty) {
+        rankingBody.innerHTML = '<tr><td colspan="4">Nenhum usuário no ranking.</td></tr>';
+        return;
+      }
       let position = 1;
       snapshot.forEach((doc) => {
         const user = doc.data();
@@ -491,7 +491,7 @@ function loadRanking(isAdmin) {
       });
     }, (error) => {
       console.error('Erro ao carregar ranking:', error.code, error.message);
-      alert('Erro ao carregar ranking: ' + error.message);
+      rankingBody.innerHTML = `<tr><td colspan="4">Erro ao carregar ranking: ${error.message}</td></tr>`;
     });
 }
 
@@ -510,39 +510,45 @@ function closeModal() {
 
 // Confirmar exclusão
 function confirmDelete() {
-  if (userToDelete) {
-    console.log('Excluindo usuário:', userToDelete.id);
-    firebase.auth().currentUser.getIdToken(true).then(() => {
-      db.collection('users').doc(userToDelete.id).update({
-        active: false
-      }).then(() => {
-        db.collection('ranking').doc(userToDelete.id).delete().then(() => {
-          db.collection('posts').where('authorId', '==', userToDelete.id).get().then((snapshot) => {
-            const batch = db.batch();
-            snapshot.forEach((doc) => {
-              batch.delete(doc.ref);
-              db.collection(`posts/${doc.id}/likes`).get().then((likes) => {
-                likes.forEach((like) => batch.delete(like.ref));
-              });
-              db.collection(`posts/${doc.id}/comments`).get().then((comments) => {
-                comments.forEach((comment) => batch.delete(comment.ref));
-              });
+  if (!userToDelete) return;
+
+  console.log('Excluindo usuário:', userToDelete.id);
+  firebase.auth().currentUser.getIdToken(true).then(() => {
+    db.collection('users').doc(userToDelete.id).update({
+      active: false
+    }).then(() => {
+      db.collection('ranking').doc(userToDelete.id).delete().then(() => {
+        db.collection('posts').where('authorId', '==', userToDelete.id).get().then((snapshot) => {
+          const batch = db.batch();
+          snapshot.forEach((doc) => {
+            batch.delete(doc.ref);
+            db.collection(`posts/${doc.id}/likes`).get().then((likes) => {
+              likes.forEach((like) => batch.delete(like.ref));
             });
-            batch.commit().then(() => {
-              console.log('Usuário excluído com sucesso:', userToDelete.id);
-              closeModal();
+            db.collection(`posts/${doc.id}/comments`).get().then((comments) => {
+              comments.forEach((comment) => batch.delete(comment.ref));
             });
+          });
+          batch.commit().then(() => {
+            console.log('Usuário excluído com sucesso:', userToDelete.id);
+            closeModal();
+          }).catch((error) => {
+            console.error('Erro ao excluir posts do usuário:', error.code, error.message);
+            alert('Erro ao excluir posts do usuário: ' + error.message);
           });
         });
       }).catch((error) => {
-        console.error('Erro ao excluir usuário:', error.code, error.message);
+        console.error('Erro ao excluir usuário do ranking:', error.code, error.message);
         alert('Erro ao excluir usuário: ' + error.message);
       });
     }).catch((error) => {
-      console.error('Erro ao atualizar token:', error.code, error.message);
-      alert('Erro ao atualizar autenticação: ' + error.message);
+      console.error('Erro ao desativar usuário:', error.code, error.message);
+      alert('Erro ao desativar usuário: ' + error.message);
     });
-  }
+  }).catch((error) => {
+    console.error('Erro ao atualizar token:', error.code, error.message);
+    alert('Erro ao atualizar autenticação: ' + error.message);
+  });
 }
 
 // Lógica do Feed Social
@@ -556,21 +562,24 @@ function createPost() {
     return;
   }
 
-  if (content) {
-    console.log('Criando post para usuário:', user.uid);
-    db.collection('posts').add({
-      content: content,
-      author: user.displayName || user.email.split('@')[0],
-      authorId: user.uid,
-      timestamp: firebase.firestore.FieldValue.serverTimestamp()
-    }).then(() => {
-      document.getElementById('post-content').value = '';
-      console.log('Post criado com sucesso');
-    }).catch((error) => {
-      console.error('Erro ao criar post:', error.code, error.message);
-      alert('Erro ao criar post: ' + error.message);
-    });
+  if (!content) {
+    alert('Escreva algo para postar.');
+    return;
   }
+
+  console.log('Criando post para usuário:', user.uid);
+  db.collection('posts').add({
+    content: content,
+    author: user.displayName || user.email.split('@')[0],
+    authorId: user.uid,
+    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+  }).then(() => {
+    document.getElementById('post-content').value = '';
+    console.log('Post criado com sucesso');
+  }).catch((error) => {
+    console.error('Erro ao criar post:', error.code, error.message);
+    alert('Erro ao criar post: ' + error.message);
+  });
 }
 
 function loadPosts(currentUser) {
@@ -585,6 +594,10 @@ function loadPosts(currentUser) {
 
   db.collection('posts').orderBy('timestamp', 'desc').onSnapshot((snapshot) => {
     console.log('Posts atualizados:', snapshot.docs.length, 'posts');
+    if (snapshot.empty) {
+      postsContainer.innerHTML = '<p>Nenhum post disponível no momento.</p>';
+      return;
+    }
     snapshot.docChanges().forEach((change) => {
       const post = change.doc.data();
       const postId = change.doc.id;
@@ -626,6 +639,10 @@ function loadPosts(currentUser) {
           const commentForm = commentsContainer.querySelector('.comment-form');
           commentsContainer.innerHTML = '';
           commentsContainer.appendChild(commentForm);
+          if (commentsSnapshot.empty) {
+            document.getElementById(`comment-count-${postId}`).textContent = '(0)';
+            return;
+          }
           commentsSnapshot.forEach((commentDoc) => {
             const comment = commentDoc.data();
             const commentElement = document.createElement('div');
@@ -656,7 +673,7 @@ function loadPosts(currentUser) {
     });
   }, (error) => {
     console.error('Erro ao carregar posts:', error.code, error.message);
-    alert('Erro ao carregar posts: ' + error.message);
+    postsContainer.innerHTML = `<p>Erro ao carregar posts: ${error.message}</p>`;
   });
 }
 
@@ -712,21 +729,24 @@ function addComment(postId, userId) {
     return;
   }
 
-  if (content) {
-    console.log('Adicionando comentário para post:', postId);
-    db.collection(`posts/${postId}/comments`).add({
-      content: content,
-      author: user.displayName || user.email.split('@')[0],
-      authorId: userId,
-      timestamp: firebase.firestore.FieldValue.serverTimestamp()
-    }).then(() => {
-      commentInput.value = '';
-      console.log('Comentário adicionado com sucesso');
-    }).catch((error) => {
-      console.error('Erro ao adicionar comentário:', error.code, error.message);
-      alert('Erro ao adicionar comentário: ' + error.message);
-    });
+  if (!content) {
+    alert('Escreva um comentário antes de enviar.');
+    return;
   }
+
+  console.log('Adicionando comentário para post:', postId);
+  db.collection(`posts/${postId}/comments`).add({
+    content: content,
+    author: user.displayName || user.email.split('@')[0],
+    authorId: userId,
+    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+  }).then(() => {
+    commentInput.value = '';
+    console.log('Comentário adicionado com sucesso');
+  }).catch((error) => {
+    console.error('Erro ao adicionar comentário:', error.code, error.message);
+    alert('Erro ao adicionar comentário: ' + error.message);
+  });
 }
 
 function toggleComments(postId) {
