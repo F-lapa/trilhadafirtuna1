@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trilha da Fortuna - Sistema</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <h1>Trilha da Fortuna</h1>
+        <nav>
+            <ul>
+                <li><a href="#home" class="active">Home</a></li>
+                <li><a href="#ranking">Ranking</a></li>
+                <li><a href="#desafios">Desafios</a></li>
+                <li id="admin-panel" style="display: none;"><a href="#admin">Painel Admin</a></li>
+            </ul>
+        </nav>
+        <button id="logout">Sair</button>
+    </header>
+    <main>
+        <section id="home">
+            <div class="welcome-banner">
+                <div class="carousel">
+                    <div class="carousel-item active">Bem-vindo à Trilha da Fortuna!</div>
+                    <div class="carousel-item">Conquiste pontos e suba no ranking!</div>
+                    <div class="carousel-item">Participe dos desafios financeiros!</div>
+                </div>
+                <p id="welcome-message">Explore e aprenda com diversão!</p>
+            </div>
+            <div class="feature-cards">
+                <div class="card" data-section="desafios">
+                    <h3>Desafios</h3>
+                    <p>Participe de desafios financeiros e teste seus conhecimentos.</p>
+                    <button class="card-button" onclick="navigateToSection('desafios')">Ver Desafios</button>
+                </div>
+                <div class="card" data-section="ranking">
+                    <h3>Ranking</h3>
+                    <p>Dispute o topo com outros jogadores!</p>
+                    <button class="card-button" onclick="navigateToSection('ranking')">Ver Ranking</button>
+                </div>
+                <div class="card">
+                    <h3>Conquistas</h3>
+                    <p>Desbloqueie recompensas ao atingir metas.</p>
+                    <button class="card-button" disabled>Em Breve</button>
+                </div>
+            </div>
+            <div class="social-feed">
+                <h2>Feed da Comunidade</h2>
+                <div id="post-form" style="display: none;">
+                    <textarea id="post-content" placeholder="Escreva uma postagem..." required></textarea>
+                    <button onclick="createPost()">Postar</button>
+                </div>
+                <div id="posts"></div>
+            </div>
+        </section>
+        <section id="ranking" style="display: none;">
+            <h2>Ranking de Jogadores</h2>
+            <table class="ranking-table">
+                <thead>
+                    <tr>
+                        <th>Posição</th>
+                        <th>Nome</th>
+                        <th>Pontos</th>
+                        <th class="admin-only" style="display: none;">Ação</th>
+                    </tr>
+                </thead>
+                <tbody id="ranking-body">
+                    <!-- Dados dinâmicos inseridos via JavaScript -->
+                </tbody>
+            </table>
+        </section>
+        <section id="desafios" style="display: none;">
+            <h2>Desafios Financeiros</h2>
+            <div id="challenges-list" class="challenges-list">
+                <!-- Desafios dinâmicos inseridos via JavaScript -->
+            </div>
+        </section>
+        <section id="admin" style="display: none;">
+            <h2>Painel do Administrador</h2>
+            <div class="admin-form">
+                <h3>Cadastrar Novo Usuário</h3>
+                <form id="create-user-form">
+                    <div class="form-group">
+                        <label for="user-name">Nome</label>
+                        <input type="text" id="user-name" placeholder="Digite o nome" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="user-email">E-mail</label>
+                        <input type="email" id="user-email" placeholder="Digite o e-mail" required>
+                    </div>
+                    <div class="form-group password-group">
+                        <label for="user-password">Senha</label>
+                        <input type="password" id="user-password" placeholder="Digite a senha" required>
+                        <span class="toggle-password" onclick="togglePassword('user-password')"></span>
+                    </div>
+                    <button type="submit">Cadastrar</button>
+                </form>
+                <p id="admin-message" class="success"></p>
+                <p id="admin-error" class="error"></p>
+            </div>
+            <div class="admin-form">
+                <h3>Criar Novo Desafio</h3>
+                <form id="create-challenge-form">
+                    <div class="form-group">
+                        <label for="challenge-title">Título</label>
+                        <input type="text" id="challenge-title" placeholder="Digite o título do desafio" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="challenge-description">Descrição</label>
+                        <textarea id="challenge-description" placeholder="Descreva o desafio" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="challenge-deadline">Prazo (opcional)</label>
+                        <input type="date" id="challenge-deadline">
+                    </div>
+                    <button type="submit">Criar Desafio</button>
+                </form>
+                <p id="challenge-message" class="success"></p>
+                <p id="challenge-error" class="error"></p>
+            </div>
+            <div class="admin-submissions">
+                <h3>Revisar Comprovantes</h3>
+                <div id="submissions-list">
+                    <!-- Envios pendentes inseridos via JavaScript -->
+                </div>
+            </div>
+        </section>
+        <!-- Modal de Confirmação -->
+        <div id="delete-modal" class="modal">
+            <div class="modal-content">
+                <h3>Confirmar Exclusão</h3>
+                <p>Deseja realmente excluir o usuário <span id="delete-user-name"></span>? Esta ação é irreversível.</p>
+                <div class="modal-actions">
+                    <button onclick="confirmDelete()">Confirmar</button>
+                    <button onclick="closeModal()">Cancelar</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
+    <script src="js/auth.js"></script>
+</body>
+</html>

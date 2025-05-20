@@ -1,0 +1,703 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+
+body {
+    background: linear-gradient(135deg, #e0eafc, #cfdef3);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Login Page */
+.login-container {
+    background: white;
+    padding: 2.5rem;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 450px;
+    text-align: center;
+    margin: auto;
+    margin-top: 5rem;
+}
+
+.login-container h1 {
+    margin-bottom: 2rem;
+    color: #1a3c34;
+    font-size: 2rem;
+    font-weight: 600;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+    text-align: left;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #444;
+    font-weight: 600;
+}
+
+.form-group input,
+.form-group textarea {
+    width: 100%;
+    padding: 0.9rem;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border-color 0.3s;
+}
+
+.form-group textarea {
+    height: 100px;
+    resize: vertical;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+    border-color: #28a745;
+    outline: none;
+}
+
+.password-group {
+    position: relative;
+}
+
+.toggle-password {
+    position: absolute;
+    right: 10px;
+    top: 70%;
+    transform: translateY(-50%);
+    width: 20px;
+    height: 20px;
+    background: url('https://img.icons8.com/ios/20/000000/visible.png') no-repeat center;
+    background-size: contain;
+    cursor: pointer;
+}
+
+.toggle-password.active {
+    background: url('https://img.icons8.com/ios/20/000000/invisible.png') no-repeat center;
+    background-size: contain;
+}
+
+button {
+    width: 100%;
+    padding: 1rem;
+    background: linear-gradient(90deg, #28a745, #34c759);
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(40, 167, 69, 0.3);
+}
+
+button:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+.error {
+    color: #dc3545;
+    margin-top: 1rem;
+    font-size: 0.9rem;
+}
+
+.success {
+    color: #28a745;
+    margin-top: 1rem;
+    font-size: 0.9rem;
+}
+
+/* Header */
+header {
+    background: linear-gradient(90deg, #1a3c34, #2e5b52);
+    color: white;
+    padding: 1.5rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+header h1 {
+    font-size: 1.8rem;
+    font-weight: 600;
+}
+
+nav ul {
+    list-style: none;
+    display: flex;
+    align-items: center;
+}
+
+nav ul li {
+    margin: 0 1.5rem;
+}
+
+nav ul li a {
+    color: white;
+    text-decoration: none;
+    font-size: 1rem;
+    font-weight: 500;
+    transition: color 0.3s;
+}
+
+nav ul li a.active,
+nav ul li a:hover {
+    color: #34c759;
+}
+
+#logout {
+    background: linear-gradient(90deg, #dc3545, #e4606d);
+    width: auto;
+    padding: 0.6rem 1.5rem;
+    font-size: 1rem;
+    border-radius: 8px;
+}
+
+#logout:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(220, 53, 69, 0.3);
+}
+
+/* Main Content */
+main {
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    flex: 1;
+}
+
+section {
+    background: white;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    margin-bottom: 2rem;
+}
+
+section h2 {
+    color: #1a3c34;
+    margin-bottom: 1rem;
+    font-size: 1.8rem;
+}
+
+section p {
+    color: #555;
+    line-height: 1.6;
+}
+
+/* Home Section */
+.welcome-banner {
+    background: linear-gradient(90deg, #28a745, #34c759);
+    color: white;
+    padding: 2rem;
+    border-radius: 12px;
+    text-align: center;
+    margin-bottom: 2rem;
+    animation: fadeIn 1s ease-in;
+}
+
+.carousel {
+    position: relative;
+    height: 40px;
+    overflow: hidden;
+}
+
+.carousel-item {
+    position: absolute;
+    width: 100%;
+    font-size: 1.8rem;
+    font-weight: 600;
+    opacity: 0;
+    transition: opacity 0.5s ease-in-out;
+}
+
+.carousel-item.active {
+    opacity: 1;
+}
+
+#welcome-message {
+    color: #f0f0f0;
+}
+
+.feature-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+}
+
+.card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    transition: transform 0.3s, box-shadow 0.3s;
+    cursor: pointer;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.card h3 {
+    color: #1a3c34;
+    margin-bottom: 0.5rem;
+    font-size: 1.4rem;
+}
+
+.card p {
+    color: #666;
+    margin-bottom: 1rem;
+}
+
+.card-button {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    background: linear-gradient(90deg, #28a745, #34c759);
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    transition: transform 0.2s;
+}
+
+.card-button:hover {
+    transform: translateY(-2px);
+}
+
+/* Social Feed */
+.social-feed {
+    margin-top: 2rem;
+}
+
+.social-feed h2 {
+    color: #1a3c34;
+    margin-bottom: 1rem;
+}
+
+#post-form {
+    background: white;
+    padding: 1rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    margin-bottom: 1rem;
+}
+
+#post-form textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 1rem;
+    resize: none;
+    margin-bottom: 0.5rem;
+}
+
+.post {
+    background: white;
+    padding: 1rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    margin-bottom: 1rem;
+}
+
+.post-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.post-header .avatar {
+    width: 40px;
+    height: 40px;
+    background: #ccc;
+    border-radius: 50%;
+    margin-right: 0.5rem;
+}
+
+.post-header .post-info {
+    flex: 1;
+}
+
+.post-header .post-author {
+    font-weight: 600;
+    color: #1a3c34;
+}
+
+.post-header .post-time {
+    color: #666;
+    font-size: 0.8rem;
+}
+
+.post-content {
+    margin-bottom: 0.5rem;
+    color: #333;
+}
+
+.post-actions {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.post-actions button {
+    background: none;
+    border: none;
+    color: #666;
+    font-size: 0.9rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.post-actions button:hover {
+    color: #28a745;
+}
+
+.post-actions button.liked {
+    color: #28a745;
+    font-weight: 600;
+}
+
+.post-actions .like-count,
+.post-actions .comment-count {
+    font-size: 0.8rem;
+    color: #666;
+}
+
+.comments {
+    margin-top: 0.5rem;
+}
+
+.comment {
+    background: #f9f9f9;
+    padding: 0.5rem;
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+}
+
+.comment-author {
+    font-weight: 600;
+    color: #1a3c34;
+    font-size: 0.9rem;
+}
+
+.comment-content {
+    color: #333;
+    font-size: 0.9rem;
+}
+
+.comment-form {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.comment-form input {
+    flex: 1;
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 0.9rem;
+}
+
+.comment-form button {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+}
+
+/* Ranking Table */
+.ranking-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+}
+
+.ranking-table th,
+.ranking-table td {
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+.ranking-table th {
+    background: #f4f4f9;
+    color: #1a3c34;
+    font-weight: 600;
+}
+
+.ranking-table tr:nth-child(even) {
+    background: #fafafa;
+}
+
+.ranking-table tr:hover {
+    background: #f0f0f5;
+}
+
+.delete-icon {
+    background: url('https://img.icons8.com/ios/20/000000/trash.png') no-repeat center;
+    width: 20px;
+    height: 20px;
+    display: inline-block;
+    cursor: pointer;
+}
+
+.delete-icon:hover {
+    background: url('https://img.icons8.com/ios-filled/20/ff0000/trash.png') no-repeat center;
+}
+
+/* Modal */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: white;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    max-width: 400px;
+    text-align: center;
+}
+
+.modal-content h3 {
+    color: #1a3c34;
+    margin-bottom: 1rem;
+}
+
+.modal-content p {
+    color: #555;
+    margin-bottom: 1.5rem;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+}
+
+.modal-actions button {
+    width: auto;
+    padding: 0.5rem 1.5rem;
+}
+
+.modal-actions button:first-child {
+    background: linear-gradient(90deg, #dc3545, #e4606d);
+}
+
+.modal-actions button:first-child:hover {
+    box-shadow: 0 4px 10px rgba(220, 53, 69, 0.3);
+}
+
+/* Challenges Section */
+.challenges-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.challenge-card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.challenge-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.challenge-card h3 {
+    color: #1a3c34;
+    margin-bottom: 0.5rem;
+    font-size: 1.4rem;
+}
+
+.challenge-card p {
+    color: #666;
+    margin-bottom: 1rem;
+}
+
+.challenge-card .deadline {
+    color: #888;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+}
+
+.challenge-card .upload-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.challenge-card input[type="file"] {
+    padding: 0.5rem;
+}
+
+.progress-bar {
+    background: #f0f0f0;
+    border-radius: 12px;
+    height: 10px;
+    margin-bottom: 0.5rem;
+    overflow: hidden;
+}
+
+.progress {
+    background: linear-gradient(90deg, #28a745, #34c759);
+    height: 100%;
+    transition: width 0.5s ease-in-out;
+}
+
+.challenge-card span {
+    color: #1a3c34;
+    font-size: 0.9rem;
+}
+
+/* Admin Section */
+.admin-form {
+    max-width: 500px;
+    margin: 0 auto 2rem;
+}
+
+.admin-form h3 {
+    color: #1a3c34;
+    margin-bottom: 1rem;
+    font-size: 1.4rem;
+}
+
+.admin-submissions {
+    margin-top: 2rem;
+}
+
+.submission-card {
+    background: white;
+    padding: 1rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    margin-bottom: 1rem;
+}
+
+.submission-card h4 {
+    color: #1a3c34;
+    margin-bottom: 0.5rem;
+}
+
+.submission-card p {
+    color: #666;
+    margin-bottom: 0.5rem;
+}
+
+.submission-card a {
+    color: #28a745;
+    text-decoration: none;
+}
+
+.submission-card a:hover {
+    text-decoration: underline;
+}
+
+.submission-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.submission-actions button {
+    width: auto;
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+}
+
+.submission-actions button.reject {
+    background: linear-gradient(90deg, #dc3545, #e4606d);
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    header {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    nav ul {
+        flex-direction: column;
+        margin: 1rem 0;
+    }
+
+    nav ul li {
+        margin: 0.5rem 0;
+    }
+
+    .login-container {
+        margin: 2rem;
+        padding: 1.5rem;
+    }
+
+    .ranking-table th,
+    .ranking-table td {
+        padding: 0.5rem;
+        font-size: 0.9rem;
+    }
+
+    .welcome-banner h2 {
+        font-size: 1.5rem;
+    }
+
+    .feature-cards,
+    .challenges-list {
+        grid-template-columns: 1fr;
+    }
+
+    .carousel {
+        height: 60px;
+    }
+
+    .carousel-item {
+        font-size: 1.2rem;
+    }
+
+    .modal-content {
+        width: 90%;
+        padding: 1.5rem;
+    }
+}

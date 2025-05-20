@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trilha da Fortuna - Login</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="login-container">
+        <h1>Trilha da Fortuna</h1>
+        <form id="login-form">
+            <div class="form-group">
+                <label for="email">E-mail</label>
+                <input type="email" id="email" placeholder="Digite seu e-mail" required>
+            </div>
+            <div class="form-group password-group">
+                <label for="password">Senha</label>
+                <input type="password" id="password" placeholder="Digite sua senha" required>
+                <span class="toggle-password" onclick="togglePassword('password')"></span>
+            </div>
+            <button type="submit">Entrar</button>
+        </form>
+        <p id="error-message" class="error"></p>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+    <script>
+        // Configuração do Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyB-MOmRFZFp2dzVIEWq9VZQj33fNJR-YV4",
+            authDomain: "trilha-da-fortuna-4f0d4.firebaseapp.com",
+            projectId: "trilha-da-fortuna-4f0d4",
+            storageBucket: "trilha-da-fortuna-4f0d4.firebasestorage.app",
+            messagingSenderId: "964690467607",
+            appId: "1:964690467607:web:b86ebe286a3ec2df34f552",
+            measurementId: "G-K7S8GV1RKR"
+        };
+
+        // Inicializar Firebase
+        firebase.initializeApp(firebaseConfig);
+
+        // Lógica de login
+        const loginForm = document.getElementById('login-form');
+        const errorMessage = document.getElementById('error-message');
+
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            firebase.auth().signInWithEmailAndPassword(email, password)
+                .then((userCredential) => {
+                    const user = userCredential.user;
+                    console.log('Usuário logado:', user.email);
+                    if (user.email === 'fernandolapa1987@gmail.com') {
+                        localStorage.setItem('isAdmin', 'true');
+                    } else {
+                        localStorage.setItem('isAdmin', 'false');
+                    }
+                    window.location.href = 'software.html';
+                })
+                .catch((error) => {
+                    console.error('Erro ao fazer login:', error.code, error.message);
+                    errorMessage.textContent = 'Erro: E-mail ou senha inválidos.';
+                });
+        });
+
+        // Função para mostrar/esconder senha
+        function togglePassword(inputId) {
+            const input = document.getElementById(inputId);
+            const toggle = input.nextElementSibling;
+            if (input.type === 'password') {
+                input.type = 'text';
+                toggle.classList.add('active');
+            } else {
+                input.type = 'password';
+                toggle.classList.remove('active');
+            }
+        }
+    </script>
+</body>
+</html>
