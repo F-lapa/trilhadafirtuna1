@@ -190,7 +190,6 @@ if (createUserForm) {
       }, 3000);
     } catch (error) {
       console.error('Erro ao cadastrar usuário:', error.code, error.message);
-      // Verificar se o usuário foi criado apesar do erro
       try {
         const signInMethods = await firebase.auth().fetchSignInMethodsForEmail(email);
         if (signInMethods.length > 0) {
@@ -265,7 +264,6 @@ if (createChallengeForm) {
       challengeError.textContent = '';
       createChallengeForm.reset();
       setTimeout(() => {
-       塞尔
         challengeMessage.textContent = '';
       }, 3000);
     } catch (error) {
@@ -306,7 +304,6 @@ function loadChallenges(userId, isAdmin) {
       `;
       challengesList.appendChild(card);
 
-      // Lógica de envio de comprovante
       const uploadForm = document.getElementById(`upload-form-${challengeId}`);
       uploadForm.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -320,7 +317,7 @@ function loadChallenges(userId, isAdmin) {
         try {
           console.log('Enviando comprovante para desafio:', challengeId, 'Usuário:', userId);
           const storageRef = storage.ref(`submissions/${challengeId}/${userId}/${file.name}`);
-          const uploadTask = storageRef.put(file, { userId: userId });
+          const uploadTask = storageRef.put(file);
           await uploadTask;
           const fileUrl = await storageRef.getDownloadURL();
 
@@ -367,13 +364,11 @@ async function loadSubmissions() {
 
     const submissionsList = document.getElementById('submissions-list');
 
-    // Verificar se a coleção 'submissions' existe
     const submissionsSnapshot = await db.collection('submissions').limit(1).get();
     if (submissionsSnapshot.empty) {
       console.log('Coleção submissions está vazia ou não existe.');
       submissionsList.innerHTML = '<p>Nenhuma submissão pendente.</p>';
     } else {
-      // Consulta em tempo real para submissões pendentes
       db.collection('submissions')
         .where('status', '==', 'pending')
         .onSnapshot((snapshot) => {
@@ -387,10 +382,8 @@ async function loadSubmissions() {
             const submission = doc.data();
             const submissionId = doc.id;
             console.log('Processando submissão:', submissionId, 'Dados:', submission);
-            // Buscar nome do usuário
             const userDoc = await db.collection('users').doc(submission.userId).get();
             const userName = userDoc.exists ? userDoc.data().name : 'Desconhecido';
-            // Buscar título do desafio
             const challengeDoc = await db.collection('challenges').doc(submission.challengeId).get();
             const challengeTitle = challengeDoc.exists ? challengeDoc.data().title : 'Desafio Desconhecido';
 
@@ -619,7 +612,7 @@ function loadPosts(currentUser) {
           </div>
           <div class="comments" id="comments-${postId}" style="display: none;">
             <div class="comment-form">
-              <input type="text" id="comment-input-${postId}" placeholder="Escreva um comentário...">
+              <input type="text" class="comment-input" data-post-id="${postId}" placeholder="Escreva um comentário...">
               <button onclick="addComment('${postId}', '${currentUser.uid}')">Enviar</button>
             </div>
           </div>
@@ -709,7 +702,8 @@ function toggleLike(postId, userId) {
 }
 
 function addComment(postId, userId) {
-  const content = document.getElementById(`comment-input-${postId}`).value;
+  const commentInput = document.querySelector(`.comment-input[data-post-id="${postId}"]`);
+  const content = commentInput.value;
   const user = firebase.auth().currentUser;
 
   if (!user) {
@@ -726,7 +720,7 @@ function addComment(postId, userId) {
       authorId: userId,
       timestamp: firebase.firestore.FieldValue.serverTimestamp()
     }).then(() => {
-      document.getElementById(`comment-input-${postId}`).value = '';
+      commentInput.value = '';
       console.log('Comentário adicionado com sucesso');
     }).catch((error) => {
       console.error('Erro ao adicionar comentário:', error.code, error.message);
