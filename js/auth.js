@@ -25,11 +25,12 @@ firebase.auth().onAuthStateChanged((user) => {
     return;
   }
 
-  console.log('Usuário autenticado:', user.email, 'UID:', user.uid);
+  console.log('Usuário autenticado:', user.email, 'UID:', user.uid, 'Email verificado:', user.emailVerified);
   user.getIdToken(true).then(token => {
-    console.log('Token de autenticação:', token.substring(0, 10) + '...');
+    console.log('Token de autenticação obtido com sucesso:', token.substring(0, 10) + '...');
   }).catch(error => {
-    console.error('Erro ao obter token:', error.code, error.message);
+    console.error('Erro ao obter token de autenticação:', error.code, error.message);
+    alert('Erro na autenticação: ' + error.message);
   });
 
   const welcomeMessage = document.getElementById('welcome-message');
@@ -42,6 +43,7 @@ firebase.auth().onAuthStateChanged((user) => {
     document.querySelector('.admin-only').style.display = 'table-cell';
     document.getElementById('admin-panel').style.display = 'block';
     document.getElementById('admin').style.display = 'none';
+    console.log('Carregando submissões para administrador');
     loadSubmissions();
   } else {
     const userName = user.displayName || user.email.split('@')[0];
@@ -123,7 +125,7 @@ if (createUserForm) {
       }
 
       await currentUser.getIdToken(true);
-      console.log('Token de autenticação atualizado');
+      console.log('Token de autenticação atualizado para cadastro de usuário');
 
       if (!name || !email || !password) {
         throw new Error('Todos os campos são obrigatórios.');
@@ -209,7 +211,7 @@ if (createChallengeForm) {
       }
 
       await currentUser.getIdToken(true);
-      console.log('Token de autenticação atualizado');
+      console.log('Token de autenticação atualizado para criação de desafio');
 
       if (!title || !description) {
         throw new Error('Título e descrição são obrigatórios.');
@@ -286,7 +288,7 @@ function loadChallenges(userId, isAdmin) {
         }
 
         try {
-          console.log('Enviando comprovante para desafio:', challengeId);
+          console.log('Enviando comprovante para desafio:', challengeId, 'Usuário:', userId);
           const storageRef = storage.ref(`submissions/${challengeId}/${userId}/${file.name}`);
           const uploadTask = storageRef.put(file, { userId: userId });
           await uploadTask;
@@ -318,45 +320,62 @@ function loadChallenges(userId, isAdmin) {
 // Carregar envios pendentes para revisão (admin)
 function loadSubmissions() {
   const currentUser = firebase.auth().currentUser;
-  if (!currentUser || currentUser.email !== 'fernandolapa1987@gmail.com') {
+  if (!currentUser) {
+    console.error('Nenhum usuário autenticado. Redirecionando para login.');
+    window.location.href = 'index.html';
+    return;
+  }
+  if (currentUser.email !== 'fernandolapa1987@gmail.com') {
     console.error('Acesso negado: Apenas administradores podem carregar submissões.');
     return;
   }
 
-  const submissionsList = document.getElementById('submissions-list');
-  db.collection('submissions')
-    .where('status', '==', 'pending')
-    .onSnapshot((snapshot) => {
-      console.log('Submissões pendentes:', snapshot.docs.length);
-      submissionsList.innerHTML = '';
-      snapshot.forEach(async (doc) => {
-        const submission = doc.data();
-        const submissionId = doc.id;
-        // Buscar nome do usuário
-        const userDoc = await db.collection('users').doc(submission.userId).get();
-        const userName = userDoc.exists ? userDoc.data().name : 'Desconhecido';
-        // Buscar título do desafio
-        const challengeDoc = await db.collection('challenges').doc(submission.challengeId).get();
-        const challengeTitle = challengeDoc.exists ? challengeDoc.data().title : 'Desafio Desconhecido';
+  console.log('Iniciando carregamento de submissões para administrador:', currentUser.email);
+  currentUser.getIdToken(true).then(token => {
+    console.log('Token de autenticação para submissões:', token.substring(0, 10) + '...');
+    const submissionsList = document.getElementById('submissions-list');
+    db.collection('submissions')
+      .where('status', '==', 'pending')
+      .onSnapshot((snapshot) => {
+        console.log('Submissões pendentes recebidas:', snapshot.docs.length);
+        submissionsList.innerHTML = '';
+        if (snapshot.empty) {
+          console.log('Nenhuma submissão pendente encontrada.');
+          submissionsList.innerHTML = '<p>Nenhuma submissão pendente.</p>';
+        }
+        snapshot.forEach(async (doc) => {
+          const submission = doc.data();
+          const submissionId = doc.id;
+          console.log('Processando submissão:', submissionId, 'Dados:', submission);
+          // Buscar nome do usuário
+          const userDoc = await db.collection('users').doc(submission.userId).get();
+          const userName = userDoc.exists ? userDoc.data().name : 'Desconhecido';
+          // Buscar título do desafio
+          const challengeDoc = await db.collection('challenges').doc(submission.challengeId).get();
+          const challengeTitle = challengeDoc.exists ? challengeDoc.data().title : 'Desafio Desconhecido';
 
-        const card = document.createElement('div');
-        card.className = 'submission-card';
-        card.innerHTML = `
-          <h4>Submissão de ${userName}</h4>
-          <p>Desafio: ${challengeTitle}</p>
-          <p>Enviado em: ${submission.submittedAt ? submission.submittedAt.toDate().toLocaleString('pt-BR') : 'Agora'}</p>
-          <p><a href="${submission.fileUrl}" target="_blank">Visualizar Comprovante</a></p>
-          <div class="submission-actions">
-            <button onclick="reviewSubmission('${submissionId}', '${submission.userId}', 'approved')">Aprovar</button>
-            <button class="reject" onclick="reviewSubmission('${submissionId}', '${submission.userId}', 'rejected')">Rejeitar</button>
-          </div>
-        `;
-        submissionsList.appendChild(card);
+          const card = document.createElement('div');
+          card.className = 'submission-card';
+          card.innerHTML = `
+            <h4>Submissão de ${userName}</h4>
+            <p>Desafio: ${challengeTitle}</p>
+            <p>Enviado em: ${submission.submittedAt ? submission.submittedAt.toDate().toLocaleString('pt-BR') : 'Agora'}</p>
+            <p><a href="${submission.fileUrl}" target="_blank">Visualizar Comprovante</a></p>
+            <div class="submission-actions">
+              <button onclick="reviewSubmission('${submissionId}', '${submission.userId}', 'approved')">Aprovar</button>
+              <button class="reject" onclick="reviewSubmission('${submissionId}', '${submission.userId}', 'rejected')">Rejeitar</button>
+            </div>
+          `;
+          submissionsList.appendChild(card);
+        });
+      }, (error) => {
+        console.error('Erro ao carregar submissões:', error.code, error.message);
+        alert('Erro ao carregar submissões: ' + error.message);
       });
-    }, (error) => {
-      console.error('Erro ao carregar submissões:', error.code, error.message);
-      alert('Erro ao carregar submissões: ' + error.message);
-    });
+  }).catch(error => {
+    console.error('Erro ao obter token para submissões:', error.code, error.message);
+    alert('Erro na autenticação para carregar submissões: ' + error.message);
+  });
 }
 
 // Revisar submissão
