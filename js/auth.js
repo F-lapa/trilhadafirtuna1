@@ -18,7 +18,7 @@ const storage = firebase.storage();
 let userToDelete = null;
 
 // Verificar estado de autenticação
-firebase.auth().onAuthStateChanged((user) => {
+firebase.auth().onAuthStateChanged(async (user) => {
   if (!user) {
     console.log('Nenhum usuário autenticado, redirecionando para login');
     window.location.href = 'index.html';
@@ -26,33 +26,35 @@ firebase.auth().onAuthStateChanged((user) => {
   }
 
   console.log('Usuário autenticado:', user.email, 'UID:', user.uid, 'Email verificado:', user.emailVerified);
-  user.getIdToken(true).then(token => {
+  try {
+    const token = await user.getIdToken(true);
     console.log('Token de autenticação obtido com sucesso:', token.substring(0, 10) + '...');
-  }).catch(error => {
-    console.error('Erro ao obter token de autenticação:', error.code, error.message);
+
+    const welcomeMessage = document.getElementById('welcome-message');
+    const isAdmin = user.email === 'fernandolapa1987@gmail.com';
+    localStorage.setItem('isAdmin', isAdmin);
+
+    if (isAdmin) {
+      welcomeMessage.textContent = `Bem-vindo, Fernando! Administre a Trilha da Fortuna!`;
+      document.getElementById('post-form').style.display = 'block';
+      document.querySelector('.admin-only').style.display = 'table-cell';
+      document.getElementById('admin-panel').style.display = 'block';
+      document.getElementById('admin').style.display = 'none';
+      console.log('Carregando submissões para administrador');
+      await loadSubmissions();
+    } else {
+      const userName = user.displayName || user.email.split('@')[0];
+      welcomeMessage.textContent = `Bem-vindo, ${userName}! Explore a Trilha da Fortuna!`;
+    }
+
+    loadRanking(isAdmin);
+    loadPosts(user);
+    loadChallenges(user.uid, isAdmin);
+  } catch (error) {
+    console.error('Erro durante autenticação:', error.code, error.message);
     alert('Erro na autenticação: ' + error.message);
-  });
-
-  const welcomeMessage = document.getElementById('welcome-message');
-  const isAdmin = user.email === 'fernandolapa1987@gmail.com';
-  localStorage.setItem('isAdmin', isAdmin);
-
-  if (isAdmin) {
-    welcomeMessage.textContent = `Bem-vindo, Fernando! Administre a Trilha da Fortuna!`;
-    document.getElementById('post-form').style.display = 'block';
-    document.querySelector('.admin-only').style.display = 'table-cell';
-    document.getElementById('admin-panel').style.display = 'block';
-    document.getElementById('admin').style.display = 'none';
-    console.log('Carregando submissões para administrador');
-    loadSubmissions();
-  } else {
-    const userName = user.displayName || user.email.split('@')[0];
-    welcomeMessage.textContent = `Bem-vindo, ${userName}! Explore a Trilha da Fortuna!`;
+    window.location.href = 'index.html';
   }
-
-  loadRanking(isAdmin);
-  loadPosts(user);
-  loadChallenges(user.uid, isAdmin);
 });
 
 // Lógica de logout
@@ -318,7 +320,7 @@ function loadChallenges(userId, isAdmin) {
 }
 
 // Carregar envios pendentes para revisão (admin)
-function loadSubmissions() {
+async function loadSubmissions() {
   const currentUser = firebase.auth().currentUser;
   if (!currentUser) {
     console.error('Nenhum usuário autenticado. Redirecionando para login.');
@@ -331,9 +333,33 @@ function loadSubmissions() {
   }
 
   console.log('Iniciando carregamento de submissões para administrador:', currentUser.email);
-  currentUser.getIdToken(true).then(token => {
+  try {
+    const token = await currentUser.getIdToken(true);
     console.log('Token de autenticação para submissões:', token.substring(0, 10) + '...');
+
     const submissionsList = document.getElementById('submissions-list');
+
+    // Verificar se a coleção 'submissions' existe
+    const submissionsSnapshot = await db.collection('submissions').limit(1).get();
+    if (submissionsSnapshot.empty) {
+      console.log('Coleção submissions está vazia ou não existe.');
+      submissionsList.innerHTML = '<p>Nenhuma submissão pendente.</p>';
+
+      // Opcional: Criar um documento de teste (descomente se desejar)
+      /*
+      console.log('Criando documento de teste na coleção submissions...');
+      await db.collection('submissions').add({
+        challengeId: 'teste123',
+        userId: currentUser.uid,
+        fileUrl: 'https://exemplo.com/teste.pdf',
+        status: 'pending',
+        submittedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      console.log('Documento de teste criado com sucesso.');
+      */
+    }
+
+    // Consulta em tempo real para submissões pendentes
     db.collection('submissions')
       .where('status', '==', 'pending')
       .onSnapshot((snapshot) => {
@@ -372,10 +398,10 @@ function loadSubmissions() {
         console.error('Erro ao carregar submissões:', error.code, error.message);
         alert('Erro ao carregar submissões: ' + error.message);
       });
-  }).catch(error => {
-    console.error('Erro ao obter token para submissões:', error.code, error.message);
-    alert('Erro na autenticação para carregar submissões: ' + error.message);
-  });
+  } catch (error) {
+    console.error('Erro ao obter token ou verificar submissões:', error.code, error.message);
+    alert('Erro na autenticação ou acesso às submissões: ' + error.message);
+  }
 }
 
 // Revisar submissão
