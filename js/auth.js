@@ -156,19 +156,29 @@ if (createUserForm) {
       const rankingDoc = db.collection('ranking').doc(user.uid);
 
       console.log('Gravando em users:', user.uid);
-      await userDoc.set({
-        name: name,
-        email: email,
-        points: 0,
-        active: true
-      });
+      try {
+        await userDoc.set({
+          name: name,
+          email: email,
+          points: 0,
+          active: true
+        });
+      } catch (error) {
+        console.error('Erro ao gravar em users:', error.code, error.message);
+        throw error;
+      }
 
       console.log('Gravando em ranking:', user.uid);
-      await rankingDoc.set({
-        name: name,
-        points: 0,
-        position: 0
-      });
+      try {
+        await rankingDoc.set({
+          name: name,
+          points: 0,
+          position: 0
+        });
+      } catch (error) {
+        console.error('Erro ao gravar em ranking:', error.code, error.message);
+        throw error;
+      }
 
       console.log('Usuário cadastrado com sucesso:', user.uid);
 
@@ -181,16 +191,21 @@ if (createUserForm) {
     } catch (error) {
       console.error('Erro ao cadastrar usuário:', error.code, error.message);
       // Verificar se o usuário foi criado apesar do erro
-      const signInMethods = await firebase.auth().fetchSignInMethodsForEmail(email).catch(() => []);
-      if (signInMethods.length > 0) {
-        console.log('Usuário foi criado apesar do erro:', email);
-        adminMessage.textContent = `Usuário ${name} cadastrado com sucesso!`;
-        adminError.textContent = '';
-        createUserForm.reset();
-        setTimeout(() => {
-          adminMessage.textContent = '';
-        }, 3000);
-      } else {
+      try {
+        const signInMethods = await firebase.auth().fetchSignInMethodsForEmail(email);
+        if (signInMethods.length > 0) {
+          console.log('Usuário foi criado apesar do erro:', email);
+          adminMessage.textContent = `Usuário ${name} cadastrado com sucesso!`;
+          adminError.textContent = '';
+          createUserForm.reset();
+          setTimeout(() => {
+            adminMessage.textContent = '';
+          }, 3000);
+        } else {
+          throw error;
+        }
+      } catch (verifyError) {
+        console.error('Erro ao verificar e-mail:', verifyError.code, verifyError.message);
         if (error.code === 'auth/email-already-in-use') {
           adminError.textContent = 'Este e-mail já está cadastrado. Tente outro.';
         } else if (error.code === 'permission-denied') {
@@ -250,6 +265,7 @@ if (createChallengeForm) {
       challengeError.textContent = '';
       createChallengeForm.reset();
       setTimeout(() => {
+       塞尔
         challengeMessage.textContent = '';
       }, 3000);
     } catch (error) {
