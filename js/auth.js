@@ -183,7 +183,7 @@ if (createUserForm) {
       if (error.code === 'auth/email-already-in-use') {
         adminError.textContent = 'Este e-mail já está cadastrado. Tente outro.';
       } else if (error.code === 'permission-denied') {
-        adminError.textContent = 'Permissão negada: Verifique se você está logado como administrador.';
+        adminError.textContent = 'Permissão negada: Verifique as regras do Firestore ou se você está logado como administrador.';
       } else {
         adminError.textContent = `Erro: ${error.message}`;
       }
@@ -345,8 +345,7 @@ async function loadSubmissions() {
       console.log('Coleção submissions está vazia ou não existe.');
       submissionsList.innerHTML = '<p>Nenhuma submissão pendente.</p>';
 
-      // Opcional: Criar um documento de teste (descomente se desejar)
-      /*
+      // Criar um documento de teste
       console.log('Criando documento de teste na coleção submissions...');
       await db.collection('submissions').add({
         challengeId: 'teste123',
@@ -356,7 +355,6 @@ async function loadSubmissions() {
         submittedAt: firebase.firestore.FieldValue.serverTimestamp()
       });
       console.log('Documento de teste criado com sucesso.');
-      */
     }
 
     // Consulta em tempo real para submissões pendentes
