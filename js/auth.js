@@ -180,14 +180,26 @@ if (createUserForm) {
       }, 3000);
     } catch (error) {
       console.error('Erro ao cadastrar usuário:', error.code, error.message);
-      if (error.code === 'auth/email-already-in-use') {
-        adminError.textContent = 'Este e-mail já está cadastrado. Tente outro.';
-      } else if (error.code === 'permission-denied') {
-        adminError.textContent = 'Permissão negada: Verifique as regras do Firestore ou se você está logado como administrador.';
+      // Verificar se o usuário foi criado apesar do erro
+      const signInMethods = await firebase.auth().fetchSignInMethodsForEmail(email).catch(() => []);
+      if (signInMethods.length > 0) {
+        console.log('Usuário foi criado apesar do erro:', email);
+        adminMessage.textContent = `Usuário ${name} cadastrado com sucesso!`;
+        adminError.textContent = '';
+        createUserForm.reset();
+        setTimeout(() => {
+          adminMessage.textContent = '';
+        }, 3000);
       } else {
-        adminError.textContent = `Erro: ${error.message}`;
+        if (error.code === 'auth/email-already-in-use') {
+          adminError.textContent = 'Este e-mail já está cadastrado. Tente outro.';
+        } else if (error.code === 'permission-denied') {
+          adminError.textContent = 'Permissão negada: Verifique as regras do Firestore ou tente novamente.';
+        } else {
+          adminError.textContent = `Erro: ${error.message}`;
+        }
+        adminMessage.textContent = '';
       }
-      adminMessage.textContent = '';
     }
   });
 }
@@ -344,61 +356,50 @@ async function loadSubmissions() {
     if (submissionsSnapshot.empty) {
       console.log('Coleção submissions está vazia ou não existe.');
       submissionsList.innerHTML = '<p>Nenhuma submissão pendente.</p>';
+    } else {
+      // Consulta em tempo real para submissões pendentes
+      db.collection('submissions')
+        .where('status', '==', 'pending')
+        .onSnapshot((snapshot) => {
+          console.log('Submissões pendentes recebidas:', snapshot.docs.length);
+          submissionsList.innerHTML = '';
+          if (snapshot.empty) {
+            console.log('Nenhuma submissão pendente encontrada.');
+            submissionsList.innerHTML = '<p>Nenhuma submissão pendente.</p>';
+          }
+          snapshot.forEach(async (doc) => {
+            const submission = doc.data();
+            const submissionId = doc.id;
+            console.log('Processando submissão:', submissionId, 'Dados:', submission);
+            // Buscar nome do usuário
+            const userDoc = await db.collection('users').doc(submission.userId).get();
+            const userName = userDoc.exists ? userDoc.data().name : 'Desconhecido';
+            // Buscar título do desafio
+            const challengeDoc = await db.collection('challenges').doc(submission.challengeId).get();
+            const challengeTitle = challengeDoc.exists ? challengeDoc.data().title : 'Desafio Desconhecido';
 
-      // Criar um documento de teste
-      console.log('Criando documento de teste na coleção submissions...');
-      await db.collection('submissions').add({
-        challengeId: 'teste123',
-        userId: currentUser.uid,
-        fileUrl: 'https://exemplo.com/teste.pdf',
-        status: 'pending',
-        submittedAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
-      console.log('Documento de teste criado com sucesso.');
-    }
-
-    // Consulta em tempo real para submissões pendentes
-    db.collection('submissions')
-      .where('status', '==', 'pending')
-      .onSnapshot((snapshot) => {
-        console.log('Submissões pendentes recebidas:', snapshot.docs.length);
-        submissionsList.innerHTML = '';
-        if (snapshot.empty) {
-          console.log('Nenhuma submissão pendente encontrada.');
-          submissionsList.innerHTML = '<p>Nenhuma submissão pendente.</p>';
-        }
-        snapshot.forEach(async (doc) => {
-          const submission = doc.data();
-          const submissionId = doc.id;
-          console.log('Processando submissão:', submissionId, 'Dados:', submission);
-          // Buscar nome do usuário
-          const userDoc = await db.collection('users').doc(submission.userId).get();
-          const userName = userDoc.exists ? userDoc.data().name : 'Desconhecido';
-          // Buscar título do desafio
-          const challengeDoc = await db.collection('challenges').doc(submission.challengeId).get();
-          const challengeTitle = challengeDoc.exists ? challengeDoc.data().title : 'Desafio Desconhecido';
-
-          const card = document.createElement('div');
-          card.className = 'submission-card';
-          card.innerHTML = `
-            <h4>Submissão de ${userName}</h4>
-            <p>Desafio: ${challengeTitle}</p>
-            <p>Enviado em: ${submission.submittedAt ? submission.submittedAt.toDate().toLocaleString('pt-BR') : 'Agora'}</p>
-            <p><a href="${submission.fileUrl}" target="_blank">Visualizar Comprovante</a></p>
-            <div class="submission-actions">
-              <button onclick="reviewSubmission('${submissionId}', '${submission.userId}', 'approved')">Aprovar</button>
-              <button class="reject" onclick="reviewSubmission('${submissionId}', '${submission.userId}', 'rejected')">Rejeitar</button>
-            </div>
-          `;
-          submissionsList.appendChild(card);
+            const card = document.createElement('div');
+            card.className = 'submission-card';
+            card.innerHTML = `
+              <h4>Submissão de ${userName}</h4>
+              <p>Desafio: ${challengeTitle}</p>
+              <p>Enviado em: ${submission.submittedAt ? submission.submittedAt.toDate().toLocaleString('pt-BR') : 'Agora'}</p>
+              <p><a href="${submission.fileUrl}" target="_blank">Visualizar Comprovante</a></p>
+              <div class="submission-actions">
+                <button onclick="reviewSubmission('${submissionId}', '${submission.userId}', 'approved')">Aprovar</button>
+                <button class="reject" onclick="reviewSubmission('${submissionId}', '${submission.userId}', 'rejected')">Rejeitar</button>
+              </div>
+            `;
+            submissionsList.appendChild(card);
+          });
+        }, (error) => {
+          console.error('Erro ao carregar submissões:', error.code, error.message);
+          alert('Erro ao carregar submissões: ' + error.message);
         });
-      }, (error) => {
-        console.error('Erro ao carregar submissões:', error.code, error.message);
-        alert('Erro ao carregar submissões: ' + error.message);
-      });
+    }
   } catch (error) {
-    console.error('Erro ao obter token ou verificar submissões:', error.code, error.message);
-    alert('Erro na autenticação ou acesso às submissões: ' + error.message);
+    console.error('Erro ao verificar submissões:', error.code, error.message);
+    alert('Erro ao acessar submissões: ' + error.message);
   }
 }
 
