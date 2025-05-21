@@ -63,6 +63,7 @@ firebase.auth().onAuthStateChanged(async (user) => {
 
         const welcomeMessage = document.getElementById('welcome-message');
         const postForm = document.getElementById('post-form');
+        const postContent = document.getElementById('post-content');
         const postImage = document.getElementById('post-image');
         const adminSection = document.getElementById('admin');
         const adminNavLink = document.querySelector('nav a[href="#admin"]');
@@ -84,8 +85,15 @@ firebase.auth().onAuthStateChanged(async (user) => {
                 console.warn('Elemento #post-form não encontrado');
             }
 
+            if (postContent) {
+                postContent.disabled = false; // Garantir que o textarea está habilitado
+                postContent.readOnly = false;
+            } else {
+                console.warn('Elemento #post-content não encontrado');
+            }
+
             if (postImage) {
-                postImage.style.display = 'block';
+                postImage.parentElement.querySelector('.file-upload').style.display = 'inline-flex';
             } else {
                 console.warn('Elemento #post-image não encontrado');
             }
@@ -103,7 +111,7 @@ firebase.auth().onAuthStateChanged(async (user) => {
             }
 
             adminOnlyElements.forEach(el => {
-                el.style.display = el.tagName === 'TH' ? 'table-cell' : 'block';
+                el.style.display = el.tagName === 'TH' ? 'table-cell' : el.classList.contains('file-upload') ? 'inline-flex' : 'block';
             });
 
             await loadSubmissions();
@@ -124,8 +132,15 @@ firebase.auth().onAuthStateChanged(async (user) => {
                 console.warn('Elemento #post-form não encontrado');
             }
 
+            if (postContent) {
+                postContent.disabled = false; // Garantir que o textarea está habilitado
+                postContent.readOnly = false;
+            } else {
+                console.warn('Elemento #post-content não encontrado');
+            }
+
             if (postImage) {
-                postImage.style.display = 'none';
+                postImage.parentElement.querySelector('.file-upload').style.display = 'none';
             } else {
                 console.warn('Elemento #post-image não encontrado');
             }
@@ -547,7 +562,8 @@ async function confirmDelete() {
 
 // Feed Social
 function createPost() {
-    const content = document.getElementById('post-content').value.trim();
+    const contentElement = document.getElementById('post-content');
+    const content = contentElement ? contentElement.value.trim() : '';
     const imageInput = document.getElementById('post-image');
     const user = firebase.auth().currentUser;
     const isAdmin = localStorage.getItem('isAdmin') === 'true';
@@ -561,6 +577,8 @@ function createPost() {
         alert('Escreva algo para postar.');
         return;
     }
+
+    console.log('Conteúdo do post:', content); // Log para depuração
 
     const postData = {
         content,
@@ -587,8 +605,8 @@ function createPost() {
 
             await db.collection('posts').add(postData);
             console.log('Post criado com sucesso');
-            if (document.getElementById('post-content')) {
-                document.getElementById('post-content').value = '';
+            if (contentElement) {
+                contentElement.value = '';
             }
             if (imageInput) {
                 imageInput.value = '';
@@ -609,7 +627,7 @@ function loadPosts(currentUser, isAdmin) {
         return;
     }
 
-    const postsContainer = document.getElementById('posts');
+    const postsContainer = document.get Rundel('posts');
     if (!postsContainer) {
         console.warn('Elemento #posts não encontrado');
         return;
