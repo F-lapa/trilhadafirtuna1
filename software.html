@@ -51,7 +51,8 @@
                 <h2>Feed da Comunidade</h2>
                 <div class="post-form" id="post-form">
                     <textarea id="post-content" placeholder="No que você está pensando?"></textarea>
-                    <input type="file" id="post-image" accept="image/*" style="display: none;" class="admin-only">
+                    <label for="post-image" class="file-upload admin-only">Escolher Imagem</label>
+                    <input type="file" id="post-image" accept="image/*">
                     <button onclick="createPost()">Postar</button>
                 </div>
                 <div id="posts"></div>
