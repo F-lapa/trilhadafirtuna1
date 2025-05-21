@@ -73,6 +73,7 @@ firebase.auth().onAuthStateChanged(async (user) => {
         const postForm = document.getElementById('post-form');
         const postContent = document.getElementById('post-content');
         const postImage = document.getElementById('post-image');
+        const postButton = document.getElementById('post-button');
         const adminSection = document.getElementById('admin');
         const adminNavLink = document.querySelector('nav a[href="#admin"]');
         const adminOnlyElements = document.querySelectorAll('.admin-only');
@@ -86,12 +87,14 @@ firebase.auth().onAuthStateChanged(async (user) => {
                 element.style.userSelect = 'text';
                 element.style.cursor = 'text';
                 element.style.opacity = '1';
+                element.style.display = 'block';
                 element.focus();
                 console.log(`Textarea #post-content habilitado (${context})`, {
                     disabled: element.disabled,
                     readonly: element.readOnly,
                     pointerEvents: element.style.pointerEvents,
                     userSelect: element.style.userSelect,
+                    display: element.style.display,
                     id: element.id
                 });
             } else {
@@ -104,12 +107,13 @@ firebase.auth().onAuthStateChanged(async (user) => {
             console.log('Configurando interface para administrador');
             document.body.classList.add('admin');
 
-            // Mostrar e habilitar o formulário de postagem
+            // Mostrar e habilitar o formulário
             if (postForm) {
                 postForm.style.display = 'block';
                 postForm.style.pointerEvents = 'auto';
                 postForm.style.userSelect = 'text';
-                console.log('Formulário #post-form visível e interativo para admin');
+                postForm.style.opacity = '1';
+                console.log('Formulário #post-form VISÍVEL e INTERATIVO para admin');
             } else {
                 console.error('Elemento #post-form NÃO ENCONTRADO');
             }
@@ -117,7 +121,7 @@ firebase.auth().onAuthStateChanged(async (user) => {
             // Habilitar o textarea
             enableTextarea(postContent, 'admin inicial');
 
-            // Verificação após carregamento do DOM
+            // Verificar após carregamento do DOM
             window.addEventListener('load', () => {
                 const postContentRetry = document.getElementById('post-content');
                 enableTextarea(postContentRetry, 'admin após load');
@@ -133,15 +137,35 @@ firebase.auth().onAuthStateChanged(async (user) => {
             });
             observer.observe(document.body, { childList: true, subtree: true });
 
+            // Verificação contínua por 10 segundos
+            const enableInterval = setInterval(() => {
+                const postContentInterval = document.getElementById('post-content');
+                enableTextarea(postContentInterval, 'admin via setInterval');
+                if (postContentInterval) {
+                    clearInterval(enableInterval);
+                }
+            }, 500);
+            setTimeout(() => clearInterval(enableInterval), 10000);
+
             // Botão de upload de imagem
             if (postImage) {
                 const fileUpload = postImage.parentElement.querySelector('.file-upload');
                 if (fileUpload) {
                     fileUpload.style.display = 'inline-flex';
-                    console.log('Botão de upload de imagem visível para admin');
+                    fileUpload.style.pointerEvents = 'auto';
+                    console.log('Botão de upload de imagem VISÍVEL para admin');
                 }
             } else {
                 console.warn('Elemento #post-image não encontrado');
+            }
+
+            // Verificar botão Postar
+            if (postButton) {
+                postButton.style.display = 'block';
+                postButton.style.pointerEvents = 'auto';
+                console.log('Botão #post-button VISÍVEL e INTERATIVO para admin');
+            } else {
+                console.error('Elemento #post-button NÃO ENCONTRADO');
             }
 
             // Painel admin
@@ -167,9 +191,10 @@ firebase.auth().onAuthStateChanged(async (user) => {
             console.log('Configurando interface para usuário comum');
             document.body.classList.remove('admin');
 
-            // Ocultar o formulário de postagem
+            // Ocultar o formulário
             if (postForm) {
                 postForm.style.display = 'none';
+                postForm.style.pointerEvents = 'none';
                 console.log('Formulário #post-form OCULTO para usuário comum');
             } else {
                 console.error('Elemento #post-form NÃO ENCONTRADO');
@@ -189,6 +214,12 @@ firebase.auth().onAuthStateChanged(async (user) => {
                 }
             } else {
                 console.warn('Elemento #post-image não encontrado');
+            }
+
+            if (postButton) {
+                postButton.style.display = 'none';
+            } else {
+                console.warn('Elemento #post-button não encontrado');
             }
 
             if (adminSection) {
