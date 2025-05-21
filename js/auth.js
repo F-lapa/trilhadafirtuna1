@@ -11,6 +11,7 @@ const firebaseConfig = {
 
 // Inicializar Firebase
 firebase.initializeApp(firebaseConfig);
+console.log('Firebase inicializado com sucesso'); // Log para depuração
 const db = firebase.firestore();
 const storage = firebase.storage();
 
@@ -50,7 +51,7 @@ firebase.auth().onAuthStateChanged(async (user) => {
             document.getElementById('post-form').style.display = 'block';
             document.querySelector('.admin-only').style.display = 'table-cell';
             document.getElementById('admin-panel').style.display = 'block';
-            document.getElementById('admin').style.display = 'none';
+            console.log('Painel do administrador deve estar visível'); // Log para depuração
             await loadSubmissions();
         } else {
             document.body.classList.remove('admin');
@@ -93,12 +94,22 @@ navLinks.forEach(link => {
 function navigateToSection(sectionId) {
     sections.forEach(section => {
         const el = document.getElementById(section);
-        el.classList.remove('active');
+        if (el) {
+            el.classList.remove('active');
+        }
     });
     const targetSection = document.getElementById(sectionId);
-    targetSection.classList.add('active');
+    if (targetSection) {
+        targetSection.classList.add('active');
+        console.log(`Navegando para a seção: ${sectionId}`); // Log para depuração
+    } else {
+        console.error(`Seção ${sectionId} não encontrada`);
+    }
     navLinks.forEach(l => l.classList.remove('active'));
-    document.querySelector(`a[href="#${sectionId}"]`).classList.add('active');
+    const activeLink = document.querySelector(`a[href="#${sectionId}"]`);
+    if (activeLink) {
+        activeLink.classList.add('active');
+    }
 }
 
 document.getElementById('home').classList.add('active');
@@ -666,7 +677,8 @@ async function confirmDeletePost() {
             throw new Error('Apenas o administrador pode excluir posts.');
         }
 
-        await currentUser.getIdToken(true);
+        console.log('Renovando token para exclusão de post'); // Log para depuração
+        await currentUser.getIdToken(true); // Renovar token
         const postRef = db.collection('posts').doc(postToDelete);
         const batch = db.batch();
         batch.delete(postRef);
@@ -678,6 +690,7 @@ async function confirmDeletePost() {
         commentsSnapshot.forEach(doc => batch.delete(doc.ref));
 
         await batch.commit();
+        console.log(`Post ${postToDelete} excluído com sucesso`);
         closePostModal();
     } catch (error) {
         console.error('Erro ao excluir post:', error);
