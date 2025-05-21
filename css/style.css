@@ -356,7 +356,7 @@ main {
 
 /* Formulário de postagem */
 .post-form {
-    display: none; /* Começa oculto, JavaScript mostra pro admin */
+    display: none; /* Começa oculto, JS mostra pro admin */
     flex-direction: column;
     gap: 1rem;
     margin-bottom: 2rem;
@@ -365,6 +365,7 @@ main {
     margin-right: auto;
     pointer-events: auto !important;
     user-select: text !important;
+    opacity: 1 !important;
 }
 
 .post-form textarea#post-content {
@@ -384,6 +385,7 @@ main {
     user-select: text !important;
     cursor: text !important;
     opacity: 1 !important;
+    display: block !important;
 }
 
 .post-form textarea#post-content:focus {
@@ -393,7 +395,7 @@ main {
 }
 
 .post-form .file-upload {
-    display: none; /* Começa oculto, JavaScript mostra pro admin */
+    display: none; /* Começa oculto, JS mostra pro admin */
     align-items: center;
     padding: 0.75rem 1.5rem;
     background: #f8f9fa;
@@ -404,6 +406,7 @@ main {
     font-size: 0.9rem;
     font-family: 'Inter', sans-serif;
     transition: background 0.3s, border-color 0.3s;
+    pointer-events: auto !important;
 }
 
 .post-form .file-upload:hover {
@@ -412,6 +415,7 @@ main {
 }
 
 .post-form button {
+    display: none; /* Começa oculto, JS mostra pro admin */
     padding: 0.75rem 1.5rem;
     background: #007bff;
     color: #fff;
@@ -422,6 +426,7 @@ main {
     font-family: 'Inter', sans-serif;
     align-self: flex-start;
     transition: background 0.3s;
+    pointer-events: auto !important;
 }
 
 .post-form button:hover {
