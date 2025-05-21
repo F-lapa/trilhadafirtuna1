@@ -367,7 +367,6 @@ main {
     user-select: text !important;
 }
 
-
 .post-form textarea#post-content {
     width: 100%;
     min-height: 150px;
@@ -384,6 +383,7 @@ main {
     pointer-events: auto !important;
     user-select: text !important;
     cursor: text !important;
+    opacity: 1 !important;
 }
 
 .post-form textarea#post-content:focus {
