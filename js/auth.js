@@ -46,6 +46,14 @@ document.addEventListener('click', (e) => {
     }
 });
 
+// Registrar evento do botão Postar
+const postButton = document.getElementById('post-button');
+if (postButton) {
+    postButton.addEventListener('click', createPost);
+} else {
+    console.warn('Botão #post-button não encontrado');
+}
+
 // Verificar estado de autenticação
 firebase.auth().onAuthStateChanged(async (user) => {
     if (!user) {
@@ -86,14 +94,18 @@ firebase.auth().onAuthStateChanged(async (user) => {
             }
 
             if (postContent) {
-                postContent.disabled = false; // Garantir que o textarea está habilitado
+                postContent.disabled = false;
                 postContent.readOnly = false;
+                console.log('Textarea #post-content habilitado');
             } else {
                 console.warn('Elemento #post-content não encontrado');
             }
 
             if (postImage) {
-                postImage.parentElement.querySelector('.file-upload').style.display = 'inline-flex';
+                const fileUpload = postImage.parentElement.querySelector('.file-upload');
+                if (fileUpload) {
+                    fileUpload.style.display = 'inline-flex';
+                }
             } else {
                 console.warn('Elemento #post-image não encontrado');
             }
@@ -133,14 +145,18 @@ firebase.auth().onAuthStateChanged(async (user) => {
             }
 
             if (postContent) {
-                postContent.disabled = false; // Garantir que o textarea está habilitado
+                postContent.disabled = false;
                 postContent.readOnly = false;
+                console.log('Textarea #post-content habilitado');
             } else {
                 console.warn('Elemento #post-content não encontrado');
             }
 
             if (postImage) {
-                postImage.parentElement.querySelector('.file-upload').style.display = 'none';
+                const fileUpload = postImage.parentElement.querySelector('.file-upload');
+                if (fileUpload) {
+                    fileUpload.style.display = 'none';
+                }
             } else {
                 console.warn('Elemento #post-image não encontrado');
             }
@@ -627,7 +643,7 @@ function loadPosts(currentUser, isAdmin) {
         return;
     }
 
-    const postsContainer = document.get Rundel('posts');
+    const postsContainer = document.getElementById('posts');
     if (!postsContainer) {
         console.warn('Elemento #posts não encontrado');
         return;
