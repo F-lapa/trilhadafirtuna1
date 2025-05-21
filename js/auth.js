@@ -77,19 +77,35 @@ firebase.auth().onAuthStateChanged(async (user) => {
         const adminNavLink = document.querySelector('nav a[href="#admin"]');
         const adminOnlyElements = document.querySelectorAll('.admin-only');
 
-        // Forçar habilitação do textarea
+        // Forçar habilitação do textarea imediatamente
         if (postContent) {
             postContent.removeAttribute('disabled');
             postContent.removeAttribute('readonly');
             postContent.style.pointerEvents = 'auto';
             postContent.style.userSelect = 'text';
             postContent.style.cursor = 'text';
-            console.log('Textarea #post-content habilitado explicitamente');
+            postContent.focus(); // Forçar foco para teste
+            console.log('Textarea #post-content habilitado imediatamente');
+            console.log('Atributos do textarea:', {
+                disabled: postContent.disabled,
+                readonly: postContent.readOnly,
+                pointerEvents: postContent.style.pointerEvents,
+                userSelect: postContent.style.userSelect
+            });
         } else {
-            console.error('Elemento #post-content não encontrado no DOM');
+            console.error('Elemento #post-content NÃO ENCONTRADO no DOM inicial');
         }
 
-        // Verificação adicional após carregamento completo do DOM
+        // Garantir que o elemento pai (.post-form) seja interativo
+        if (postForm) {
+            postForm.style.pointerEvents = 'auto';
+            postForm.style.userSelect = 'text';
+            console.log('Elemento .post-form configurado como interativo');
+        } else {
+            console.error('Elemento #post-form NÃO ENCONTRADO');
+        }
+
+        // Verificação após carregamento completo do DOM
         window.addEventListener('load', () => {
             const postContentRetry = document.getElementById('post-content');
             if (postContentRetry) {
@@ -98,11 +114,35 @@ firebase.auth().onAuthStateChanged(async (user) => {
                 postContentRetry.style.pointerEvents = 'auto';
                 postContentRetry.style.userSelect = 'text';
                 postContentRetry.style.cursor = 'text';
+                postContentRetry.focus(); // Forçar foco para teste
                 console.log('Textarea #post-content habilitado após evento load');
+                console.log('Atributos do textarea após load:', {
+                    disabled: postContentRetry.disabled,
+                    readonly: postContentRetry.readOnly,
+                    pointerEvents: postContentRetry.style.pointerEvents,
+                    userSelect: postContentRetry.style.userSelect
+                });
             } else {
-                console.error('Elemento #post-content ainda não encontrado após load');
+                console.error('Elemento #post-content NÃO ENCONTRADO após evento load');
             }
         });
+
+        // Verificação contínua por 5 segundos
+        const enableTextareaInterval = setInterval(() => {
+            const postContentInterval = document.getElementById('post-content');
+            if (postContentInterval) {
+                postContentInterval.removeAttribute('disabled');
+                postContentInterval.removeAttribute('readonly');
+                postContentInterval.style.pointerEvents = 'auto';
+                postContentInterval.style.userSelect = 'text';
+                postContentInterval.style.cursor = 'text';
+                console.log('Textarea #post-content habilitado via setInterval');
+                clearInterval(enableTextareaInterval); // Para após encontrar
+            } else {
+                console.warn('Elemento #post-content ainda não encontrado no setInterval');
+            }
+        }, 500);
+        setTimeout(() => clearInterval(enableTextareaInterval), 5000); // Limite de 5s
 
         // Configuração para administrador
         if (isAdmin) {
