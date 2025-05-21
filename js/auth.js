@@ -77,6 +77,34 @@ firebase.auth().onAuthStateChanged(async (user) => {
         const adminNavLink = document.querySelector('nav a[href="#admin"]');
         const adminOnlyElements = document.querySelectorAll('.admin-only');
 
+        // Forçar habilitação do textarea
+        if (postContent) {
+            postContent.removeAttribute('disabled');
+            postContent.removeAttribute('readonly');
+            postContent.style.pointerEvents = 'auto';
+            postContent.style.userSelect = 'text';
+            postContent.style.cursor = 'text';
+            console.log('Textarea #post-content habilitado explicitamente');
+        } else {
+            console.error('Elemento #post-content não encontrado no DOM');
+        }
+
+        // Verificação adicional após carregamento completo do DOM
+        window.addEventListener('load', () => {
+            const postContentRetry = document.getElementById('post-content');
+            if (postContentRetry) {
+                postContentRetry.removeAttribute('disabled');
+                postContentRetry.removeAttribute('readonly');
+                postContentRetry.style.pointerEvents = 'auto';
+                postContentRetry.style.userSelect = 'text';
+                postContentRetry.style.cursor = 'text';
+                console.log('Textarea #post-content habilitado após evento load');
+            } else {
+                console.error('Elemento #post-content ainda não encontrado após load');
+            }
+        });
+
+        // Configuração para administrador
         if (isAdmin) {
             console.log('Configurando interface para administrador');
             document.body.classList.add('admin');
@@ -91,14 +119,6 @@ firebase.auth().onAuthStateChanged(async (user) => {
                 postForm.style.display = 'block';
             } else {
                 console.warn('Elemento #post-form não encontrado');
-            }
-
-            if (postContent) {
-                postContent.disabled = false;
-                postContent.readOnly = false;
-                console.log('Textarea #post-content habilitado');
-            } else {
-                console.warn('Elemento #post-content não encontrado');
             }
 
             if (postImage) {
@@ -128,6 +148,7 @@ firebase.auth().onAuthStateChanged(async (user) => {
 
             await loadSubmissions();
         } else {
+            // Configuração para usuário comum
             console.log('Configurando interface para usuário comum');
             document.body.classList.remove('admin');
 
@@ -142,14 +163,6 @@ firebase.auth().onAuthStateChanged(async (user) => {
                 postForm.style.display = 'block';
             } else {
                 console.warn('Elemento #post-form não encontrado');
-            }
-
-            if (postContent) {
-                postContent.disabled = false;
-                postContent.readOnly = false;
-                console.log('Textarea #post-content habilitado');
-            } else {
-                console.warn('Elemento #post-content não encontrado');
             }
 
             if (postImage) {
@@ -1078,3 +1091,17 @@ async function confirmEditComment() {
         closeEditCommentModal();
     }
 }
+
+setTimeout(() => {
+    const postContent = document.getElementById('post-content');
+    if (postContent) {
+        postContent.removeAttribute('disabled');
+        postContent.removeAttribute('readonly');
+        postContent.style.pointerEvents = 'auto';
+        postContent.style.userSelect = 'text';
+        postContent.style.cursor = 'text';
+        console.log('Textarea #post-content forçado após 3s');
+    } else {
+        console.error('Elemento #post-content não encontrado após 3s');
+    }
+}, 3000);
