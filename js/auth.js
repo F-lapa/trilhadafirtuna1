@@ -1,3 +1,4 @@
+
 // Configuração do Firebase
 const firebaseConfig = {
     apiKey: "AIzaSyB-MOmRFZFp2dzVIEWq9VZQj33fNJR-YV4",
@@ -11,7 +12,7 @@ const firebaseConfig = {
 
 // Inicializar Firebase
 firebase.initializeApp(firebaseConfig);
-console.log('Firebase inicializado com sucesso'); // Log para depuração
+console.log('Firebase inicializado com sucesso. Versão:', firebase.SDK_VERSION); // Log para depuração
 const db = firebase.firestore();
 const storage = firebase.storage();
 
@@ -21,6 +22,11 @@ let postToDelete = null;
 let commentToDelete = null;
 let postToEdit = null;
 let commentToEdit = null;
+
+// Função auxiliar para aguardar propagação do token
+function wait(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 // Fechar dropdowns ao clicar fora
 document.addEventListener('click', (e) => {
@@ -669,7 +675,10 @@ function closePostModal() {
 }
 
 async function confirmDeletePost() {
-    if (!postToDelete) return;
+    if (!postToDelete) {
+        console.error('Nenhum post selecionado para exclusão');
+        return;
+    }
 
     try {
         const currentUser = firebase.auth().currentUser;
@@ -677,56 +686,41 @@ async function confirmDeletePost() {
             throw new Error('Apenas o administrador pode excluir posts.');
         }
 
-        console.log('Renovando token para exclusão de post'); // Log para depuração
-        await currentUser.getIdToken(true); // Renovar token
-        const postRef = db.collection('posts').doc(postToDelete);
-        const batch = db.batch();
-        batch.delete(postRef);
+        console.log('Usuário atual:', currentUser.email, 'UID:', currentUser.uid);
+        console.log('Renovando token para exclusão do post:', postToDelete);
+        const token = await currentUser.getIdToken(true); // Renovar token
+        console.log('Token renovado:', token.substring(0, 50) + '...'); // Log parcial do token
+        await wait(100); // Aguarda 100ms para propagação do token
 
+        // Testar exclusão apenas do post primeiro
+        console.log('Tentando excluir apenas o post:', postToDelete);
+        const postRef = db.collection('posts').doc(postToDelete);
+        await postRef.delete();
+        console.log('Post principal excluído com sucesso:', postToDelete);
+
+        // Excluir likes e comentários em um batch
+        const batch = db.batch();
         const likesSnapshot = await db.collection(`posts/${postToDelete}/likes`).get();
-        likesSnapshot.forEach(doc => batch.delete(doc.ref));
+        likesSnapshot.forEach(doc => {
+            console.log('Excluindo like:', doc.id);
+            batch.delete(doc.ref);
+        });
 
         const commentsSnapshot = await db.collection(`posts/${postToDelete}/comments`).get();
-        commentsSnapshot.forEach(doc => batch.delete(doc.ref));
+        commentsSnapshot.forEach(doc => {
+            console.log('Excluindo comentário:', doc.id);
+            batch.delete(doc.ref);
+        });
 
+        console.log('Executando batch commit para likes e comentários');
         await batch.commit();
-        console.log(`Post ${postToDelete} excluído com sucesso`);
+        console.log('Post e coleções associadas excluídos com sucesso');
+
         closePostModal();
     } catch (error) {
         console.error('Erro ao excluir post:', error);
         alert('Erro ao excluir post: ' + error.message);
         closePostModal();
-    }
-}
-
-// Exclusão de comentários
-function openDeleteCommentModal(postId, commentId) {
-    commentToDelete = { postId, commentId };
-    document.getElementById('delete-comment-modal').style.display = 'flex';
-}
-
-function closeCommentModal() {
-    commentToDelete = null;
-    document.getElementById('delete-comment-modal').style.display = 'none';
-}
-
-async function confirmDeleteComment() {
-    if (!commentToDelete) return;
-
-    try {
-        const currentUser = firebase.auth().currentUser;
-        if (!currentUser || currentUser.email !== 'fernandolapa1987@gmail.com') {
-            throw new Error('Apenas o administrador pode excluir comentários.');
-        }
-
-        await currentUser.getIdToken(true);
-        const commentRef = db.collection(`posts/${commentToDelete.postId}/comments`).doc(commentToDelete.commentId);
-        await commentRef.delete();
-        closeCommentModal();
-    } catch (error) {
-        console.error('Erro ao excluir comentário:', error);
-        alert('Erro ao excluir comentário: ' + error.message);
-        closeCommentModal();
     }
 }
 
