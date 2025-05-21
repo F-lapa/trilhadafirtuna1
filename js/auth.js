@@ -41,6 +41,68 @@ document.addEventListener('click', (e) => {
     }
 });
 
+// Função para habilitar elementos do formulário
+function enableFormElements() {
+    const postForm = document.getElementById('post-form');
+    const postContent = document.getElementById('post-content');
+    const postImage = document.getElementById('post-image');
+    const postButton = document.getElementById('post-button');
+    const postFormError = document.getElementById('post-form-error');
+
+    if (!postForm || !postContent || !postImage || !postButton || !postFormError) {
+        console.error('Um ou mais elementos do formulário não foram encontrados:', {
+            postForm: !!postForm,
+            postContent: !!postContent,
+            postImage: !!postImage,
+            postButton: !!postButton,
+            postFormError: !!postFormError
+        });
+        if (postFormError) {
+            postFormError.style.display = 'block';
+            postFormError.textContent = 'Erro: Elementos do formulário não encontrados.';
+        }
+        return;
+    }
+
+    console.log('Habilitando formulário para administrador');
+    postForm.style.display = 'flex';
+    postForm.style.pointerEvents = 'auto';
+    postForm.style.opacity = '1';
+    postFormError.style.display = 'none';
+
+    postContent.removeAttribute('disabled');
+    postContent.removeAttribute('readonly');
+    postContent.style.pointerEvents = 'auto';
+    postContent.style.userSelect = 'text';
+    postContent.style.cursor = 'text';
+    postContent.style.opacity = '1';
+    console.log('Textarea #post-content configurado:', {
+        disabled: postContent.disabled,
+        readonly: postContent.readOnly,
+        pointerEvents: postContent.style.pointerEvents,
+        userSelect: postContent.style.userSelect,
+        cursor: postContent.style.cursor
+    });
+
+    const fileUpload = postImage.parentElement.querySelector('.file-upload');
+    if (fileUpload) {
+        fileUpload.style.display = 'inline-flex';
+        fileUpload.style.pointerEvents = 'auto';
+        console.log('Botão de upload de imagem configurado');
+    } else {
+        console.warn('Botão .file-upload não encontrado');
+    }
+
+    postButton.style.display = 'block';
+    postButton.style.pointerEvents = 'auto';
+    postButton.disabled = false;
+    console.log('Botão #post-button configurado');
+
+    // Registrar evento do botão de postagem
+    postButton.removeEventListener('click', createPost);
+    postButton.addEventListener('click', createPost);
+}
+
 // Verificar estado de autenticação
 firebase.auth().onAuthStateChanged(async (user) => {
     if (!user) {
@@ -59,70 +121,22 @@ firebase.auth().onAuthStateChanged(async (user) => {
 
         const welcomeMessage = document.getElementById('welcome-message');
         const postForm = document.getElementById('post-form');
-        const postContent = document.getElementById('post-content');
-        const postImage = document.getElementById('post-image');
-        const postButton = document.getElementById('post-button');
+        const postFormError = document.getElementById('post-form-error');
         const adminSection = document.getElementById('admin');
         const adminNavLink = document.querySelector('nav a[href="#admin"]');
         const adminOnlyElements = document.querySelectorAll('.admin-only');
-
-        // Função para habilitar elementos do formulário
-        function enableFormElements() {
-            if (postForm) {
-                postForm.style.display = 'flex';
-                postForm.style.pointerEvents = 'auto';
-                postForm.style.opacity = '1';
-                console.log('Formulário #post-form configurado como visível e interativo');
-            } else {
-                console.error('Elemento #post-form não encontrado');
-            }
-
-            if (postContent) {
-                postContent.removeAttribute('disabled');
-                postContent.removeAttribute('readonly');
-                postContent.style.pointerEvents = 'auto';
-                postContent.style.userSelect = 'text';
-                postContent.style.cursor = 'text';
-                postContent.style.opacity = '1';
-                console.log('Textarea #post-content habilitado', {
-                    disabled: postContent.disabled,
-                    readonly: postContent.readOnly,
-                    pointerEvents: postContent.style.pointerEvents,
-                    userSelect: postContent.style.userSelect,
-                    cursor: postContent.style.cursor
-                });
-            } else {
-                console.error('Elemento #post-content não encontrado');
-            }
-
-            if (postImage) {
-                const fileUpload = postImage.parentElement.querySelector('.file-upload');
-                if (fileUpload) {
-                    fileUpload.style.display = 'inline-flex';
-                    fileUpload.style.pointerEvents = 'auto';
-                    console.log('Botão de upload de imagem configurado como visível');
-                }
-            } else {
-                console.error('Elemento #post-image não encontrado');
-            }
-
-            if (postButton) {
-                postButton.style.display = 'block';
-                postButton.style.pointerEvents = 'auto';
-                console.log('Botão #post-button configurado como visível e interativo');
-                // Garante que o evento do botão esteja registrado
-                postButton.removeEventListener('click', createPost); // Evita múltiplos listeners
-                postButton.addEventListener('click', createPost);
-            } else {
-                console.error('Elemento #post-button não encontrado');
-            }
-        }
 
         // Configuração para administrador
         if (isAdmin) {
             console.log('Configurando interface para administrador');
             document.body.classList.add('admin');
-            enableFormElements();
+
+            // Aguardar o DOM carregar completamente
+            if (document.readyState === 'complete') {
+                enableFormElements();
+            } else {
+                window.addEventListener('load', enableFormElements, { once: true });
+            }
 
             if (adminSection) {
                 adminSection.style.display = 'block';
@@ -152,6 +166,10 @@ firebase.auth().onAuthStateChanged(async (user) => {
                 console.log('Formulário #post-form oculto para usuário comum');
             } else {
                 console.error('Elemento #post-form não encontrado');
+                if (postFormError) {
+                    postFormError.style.display = 'block';
+                    postFormError.textContent = 'Erro: Formulário de postagem não encontrado.';
+                }
             }
 
             if (welcomeMessage) {
@@ -159,21 +177,6 @@ firebase.auth().onAuthStateChanged(async (user) => {
                 welcomeMessage.textContent = `Bem-vindo, ${userName}! Explore a Trilha da Fortuna!`;
             } else {
                 console.warn('Elemento #welcome-message não encontrado');
-            }
-
-            if (postImage) {
-                const fileUpload = postImage.parentElement.querySelector('.file-upload');
-                if (fileUpload) {
-                    fileUpload.style.display = 'none';
-                }
-            } else {
-                console.warn('Elemento #post-image não encontrado');
-            }
-
-            if (postButton) {
-                postButton.style.display = 'none';
-            } else {
-                console.warn('Elemento #post-button não encontrado');
             }
 
             if (adminSection) {
@@ -197,12 +200,14 @@ firebase.auth().onAuthStateChanged(async (user) => {
         loadRanking(isAdmin);
         loadPosts(user, isAdmin);
         loadChallenges(user.uid, isAdmin);
-
-        // Verificação após carregamento do DOM
-        document.addEventListener('DOMContentLoaded', enableFormElements, { once: true });
     } catch (error) {
         console.error('Erro durante autenticação:', error);
         alert('Erro na autenticação: ' + error.message);
+        const postFormError = document.getElementById('post-form-error');
+        if (postFormError) {
+            postFormError.style.display = 'block';
+            postFormError.textContent = 'Erro: Não foi possível carregar o formulário devido a um problema de autenticação.';
+        }
     }
 });
 
@@ -939,7 +944,6 @@ async function confirmDeletePost() {
     } catch (error) {
         console.error('Erro ao excluir post:', error);
         alert('Erro ao excluir post: ' + error.message);
-        closePostModal();
     }
 }
 
@@ -948,21 +952,15 @@ function openEditPostModal(postId, content) {
     postToEdit = postId;
     const editPostContent = document.getElementById('edit-post-content');
     const editPostModal = document.getElementById('edit-post-modal');
-    if (editPostContent) {
+    if (editPostContent && editPostModal) {
         editPostContent.value = content;
-    }
-    if (editPostModal) {
         editPostModal.style.display = 'flex';
     }
 }
 
 function closeEditPostModal() {
     postToEdit = null;
-    const editPostContent = document.getElementById('edit-post-content');
     const editPostModal = document.getElementById('edit-post-modal');
-    if (editPostContent) {
-        editPostContent.value = '';
-    }
     if (editPostModal) {
         editPostModal.style.display = 'none';
     }
@@ -971,9 +969,12 @@ function closeEditPostModal() {
 async function confirmEditPost() {
     if (!postToEdit) return;
 
-    const newContent = document.getElementById('edit-post-content').value.trim();
-    if (!newContent) {
-        alert('O conteúdo do post não pode estar vazio.');
+    const editPostContent = document.getElementById('edit-post-content');
+    if (!editPostContent) return;
+
+    const content = editPostContent.value.trim();
+    if (!content) {
+        alert('O conteúdo não pode estar vazio.');
         return;
     }
 
@@ -985,14 +986,13 @@ async function confirmEditPost() {
 
         await currentUser.getIdToken(true);
         await db.collection('posts').doc(postToEdit).update({
-            content: newContent,
+            content,
             timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
         closeEditPostModal();
     } catch (error) {
         console.error('Erro ao editar post:', error);
         alert('Erro ao editar post: ' + error.message);
-        closeEditPostModal();
     }
 }
 
@@ -1028,7 +1028,6 @@ async function confirmDeleteComment() {
     } catch (error) {
         console.error('Erro ao excluir comentário:', error);
         alert('Erro ao excluir comentário: ' + error.message);
-        closeCommentModal();
     }
 }
 
@@ -1037,21 +1036,15 @@ function openEditCommentModal(postId, commentId, content) {
     commentToEdit = { postId, commentId };
     const editCommentContent = document.getElementById('edit-comment-content');
     const editCommentModal = document.getElementById('edit-comment-modal');
-    if (editCommentContent) {
+    if (editCommentContent && editCommentModal) {
         editCommentContent.value = content;
-    }
-    if (editCommentModal) {
         editCommentModal.style.display = 'flex';
     }
 }
 
 function closeEditCommentModal() {
     commentToEdit = null;
-    const editCommentContent = document.getElementById('edit-comment-content');
     const editCommentModal = document.getElementById('edit-comment-modal');
-    if (editCommentContent) {
-        editCommentContent.value = '';
-    }
     if (editCommentModal) {
         editCommentModal.style.display = 'none';
     }
@@ -1060,9 +1053,12 @@ function closeEditCommentModal() {
 async function confirmEditComment() {
     if (!commentToEdit) return;
 
-    const newContent = document.getElementById('edit-comment-content').value.trim();
-    if (!newContent) {
-        alert('O conteúdo do comentário não pode estar vazio.');
+    const editCommentContent = document.getElementById('edit-comment-content');
+    if (!editCommentContent) return;
+
+    const content = editCommentContent.value.trim();
+    if (!content) {
+        alert('O comentário não pode estar vazio.');
         return;
     }
 
@@ -1074,13 +1070,12 @@ async function confirmEditComment() {
 
         await currentUser.getIdToken(true);
         await db.collection(`posts/${commentToEdit.postId}/comments`).doc(commentToEdit.commentId).update({
-            content: newContent,
+            content,
             timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
         closeEditCommentModal();
     } catch (error) {
         console.error('Erro ao editar comentário:', error);
         alert('Erro ao editar comentário: ' + error.message);
-        closeEditCommentModal();
     }
 }
