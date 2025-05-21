@@ -5,7 +5,7 @@ const firebaseConfig = {
     projectId: "trilha-da-fortuna-4f0d4",
     storageBucket: "trilha-da-fortuna-4f0d4.firebasestorage.app",
     messagingSenderId: "964690467607",
-    appId: "1:964690467607:web:b86ebe286a3ec2df34f552",
+    appId: "1:964690467607:web:b86ebe286a3ec2df-ns34f552",
     measurementId: "G-K7S8GV1RKR"
 };
 
@@ -341,6 +341,11 @@ function loadChallenges(userId, isAdmin) {
     }
 
     const challengesList = document.getElementById('challenges-list');
+    if (!challengesList) {
+        console.warn('Elemento #challenges-list não encontrado');
+        return;
+    }
+
     db.collection('challenges').orderBy('createdAt', 'desc').onSnapshot((snapshot) => {
         challengesList.innerHTML = snapshot.empty ? '<p>Nenhum desafio disponível.</p>' : '';
         snapshot.forEach((doc) => {
@@ -361,29 +366,32 @@ function loadChallenges(userId, isAdmin) {
             `;
             challengesList.appendChild(card);
 
-            document.getElementById(`upload-form-${challengeId}`).addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const file = document.getElementById(`file-input-${challengeId}`).files[0];
-                if (!file) return alert('Selecione um arquivo.');
+            const uploadForm = document.getElementById(`upload-form-${challengeId}`);
+            if (uploadForm) {
+                uploadForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const file = document.getElementById(`file-input-${challengeId}`).files[0];
+                    if (!file) return alert('Selecione um arquivo.');
 
-                try {
-                    const storageRef = storage.ref(`submissions/${challengeId}/${userId}/${file.name}`);
-                    await storageRef.put(file);
-                    const fileUrl = await storageRef.getDownloadURL();
-                    await db.collection('submissions').add({
-                        challengeId,
-                        userId,
-                        fileUrl,
-                        status: 'pending',
-                        submittedAt: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-                    alert('Comprovante enviado com sucesso!');
-                    e.target.reset();
-                } catch (error) {
-                    console.error('Erro ao enviar comprovante:', error);
-                    alert('Erro ao enviar comprovante: ' + error.message);
-                }
-            });
+                    try {
+                        const storageRef = storage.ref(`submissions/${challengeId}/${userId}/${file.name}`);
+                        await storageRef.put(file);
+                        const fileUrl = await storageRef.getDownloadURL();
+                        await db.collection('submissions').add({
+                            challengeId,
+                            userId,
+                            fileUrl,
+                            status: 'pending',
+                            submittedAt: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                        alert('Comprovante enviado com sucesso!');
+                        e.target.reset();
+                    } catch (error) {
+                        console.error('Erro ao enviar comprovante:', error);
+                        alert('Erro ao enviar comprovante: ' + error.message);
+                    }
+                });
+            }
         });
     }, (error) => {
         console.error('Erro ao carregar desafios:', error);
@@ -402,9 +410,14 @@ async function loadSubmissions() {
         return;
     }
 
+    const submissionsList = document.getElementById('submissions-list');
+    if (!submissionsList) {
+        console.warn('Elemento #submissions-list não encontrado');
+        return;
+    }
+
     try {
         db.collection('submissions').where('status', '==', 'pending').onSnapshot((snapshot) => {
-            const submissionsList = document.getElementById('submissions-list');
             submissionsList.innerHTML = snapshot.empty ? '<p>Nenhuma submissão pendente.</p>' : '';
             snapshot.forEach(async (doc) => {
                 const submission = doc.data();
@@ -435,10 +448,7 @@ async function loadSubmissions() {
         });
     } catch (error) {
         console.error('Erro ao carregar submissões:', error);
-        const submissionsList = document.getElementById('submissions-list');
-        if (submissionsList) {
-            submissionsList.innerHTML = `<p>Erro: ${error.message}</p>`;
-        }
+        submissionsList.innerHTML = `<p>Erro: ${error.message}</p>`;
     }
 }
 
@@ -494,6 +504,11 @@ function loadRanking(isAdmin) {
     }
 
     const rankingBody = document.getElementById('ranking-body');
+    if (!rankingBody) {
+        console.warn('Elemento #ranking-body não encontrado');
+        return;
+    }
+
     db.collection('ranking').orderBy('points', 'desc').onSnapshot((snapshot) => {
         rankingBody.innerHTML = snapshot.empty ? '<tr><td colspan="4">Nenhum usuário no ranking.</td></tr>' : '';
         let position = 1;
@@ -798,7 +813,11 @@ function toggleLike(postId, userId) {
 
 function addComment(postId, userId) {
     const commentInput = document.querySelector(`.comment-input[data-post-id="${postId}"]`);
-    const content = commentInput.value;
+    if (!commentInput) {
+        console.warn(`Input de comentário para post ${postId} não encontrado`);
+        return;
+    }
+    const content = commentInput.value.trim();
     const user = firebase.auth().currentUser;
 
     if (!user) {
