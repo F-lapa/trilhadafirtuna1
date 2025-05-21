@@ -21,6 +21,15 @@ let commentToDelete = null;
 let postToEdit = null;
 let commentToEdit = null;
 
+// Fechar dropdowns ao clicar fora
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('.menu-dots') && !e.target.closest('.menu-dropdown')) {
+        document.querySelectorAll('.menu-dropdown.active').forEach(dropdown => {
+            dropdown.classList.remove('active');
+        });
+    }
+});
+
 // Verificar estado de autenticação
 firebase.auth().onAuthStateChanged(async (user) => {
     if (!user) {
@@ -83,14 +92,16 @@ navLinks.forEach(link => {
 
 function navigateToSection(sectionId) {
     sections.forEach(section => {
-        document.getElementById(section).style.display = 'none';
+        const el = document.getElementById(section);
+        el.classList.remove('active');
     });
-    document.getElementById(sectionId).style.display = 'block';
+    const targetSection = document.getElementById(sectionId);
+    targetSection.classList.add('active');
     navLinks.forEach(l => l.classList.remove('active'));
     document.querySelector(`a[href="#${sectionId}"]`).classList.add('active');
 }
 
-document.getElementById('home').style.display = 'block';
+document.getElementById('home').classList.add('active');
 
 // Carrossel
 const carouselItems = document.querySelectorAll('.carousel-item');
@@ -357,7 +368,10 @@ function loadRanking(isAdmin) {
                 <td>${user.name}</td>
                 <td>${user.points}</td>
                 <td class="admin-only" style="display: ${isAdmin ? 'table-cell' : 'none'};">
-                    <span class="delete-icon" onclick="openDeleteModal('${userId}', '${user.name}')"></span>
+                    <div class="menu-dots" onclick="toggleUserMenu('${userId}')"></div>
+                    <div class="menu-dropdown" id="user-menu-${userId}">
+                        <button class="delete-btn" onclick="openDeleteModal('${userId}', '${user.name}')">Excluir</button>
+                    </div>
                 </td>
             `;
             rankingBody.appendChild(row);
@@ -367,6 +381,12 @@ function loadRanking(isAdmin) {
         console.error('Erro ao carregar ranking:', error);
         rankingBody.innerHTML = `<tr><td colspan="4">Erro: ${error.message}</td></tr>`;
     });
+}
+
+// Toggle menu de usuário
+function toggleUserMenu(userId) {
+    const dropdown = document.getElementById(`user-menu-${userId}`);
+    dropdown.classList.toggle('active');
 }
 
 // Exclusão de usuário
@@ -460,8 +480,8 @@ function loadPosts(currentUser, isAdmin) {
                 postElement.className = 'post';
                 postElement.id = `post-${postId}`;
                 postElement.innerHTML = `
-                    <div class="post-menu" onclick="togglePostMenu('${postId}')"></div>
-                    <div class="post-menu-dropdown" id="menu-${postId}">
+                    <div class="menu-dots" onclick="togglePostMenu('${postId}')"></div>
+                    <div class="menu-dropdown" id="menu-${postId}">
                         <button class="edit-btn" onclick="openEditPostModal('${postId}', \`${post.content}\`)">Editar</button>
                         <button class="delete-btn" onclick="openDeletePostModal('${postId}')">Excluir</button>
                     </div>
@@ -494,7 +514,7 @@ function loadPosts(currentUser, isAdmin) {
 
                 db.collection(`posts/${postId}/comments`).orderBy('timestamp', 'asc').onSnapshot((commentsSnapshot) => {
                     const commentsContainer = document.getElementById(`comments-${postId}`);
-                    if (!commentsContainer) return; // Evita erro de null
+                    if (!commentsContainer) return;
 
                     const commentForm = commentsContainer.querySelector('.comment-form');
                     commentsContainer.innerHTML = '';
@@ -511,8 +531,8 @@ function loadPosts(currentUser, isAdmin) {
                         const commentElement = document.createElement('div');
                         commentElement.className = 'comment';
                         commentElement.innerHTML = `
-                            <div class="post-menu" onclick="toggleCommentMenu('${postId}', '${commentId}')"></div>
-                            <div class="post-menu-dropdown" id="comment-menu-${postId}-${commentId}">
+                            <div class="menu-dots" onclick="toggleCommentMenu('${postId}', '${commentId}')"></div>
+                            <div class="menu-dropdown" id="comment-menu-${postId}-${commentId}">
                                 <button class="edit-btn" onclick="openEditCommentModal('${postId}', '${commentId}', \`${comment.content}\`)">Editar</button>
                                 <button class="delete-btn" onclick="openDeleteCommentModal('${postId}', '${commentId}')">Excluir</button>
                             </div>
