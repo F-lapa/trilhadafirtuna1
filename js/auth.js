@@ -14,8 +14,10 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const storage = firebase.storage();
 
-// Variável global para armazenar o usuário a ser excluído
+// Variáveis globais para exclusão
 let userToDelete = null;
+let postToDelete = null;
+let commentToDelete = null;
 
 // Verificar estado de autenticação
 firebase.auth().onAuthStateChanged(async (user) => {
@@ -34,7 +36,9 @@ firebase.auth().onAuthStateChanged(async (user) => {
     const isAdmin = user.email === 'fernandolapa1987@gmail.com';
     localStorage.setItem('isAdmin', isAdmin);
 
+    // Adicionar classe admin ao body para exibir botões de exclusão
     if (isAdmin) {
+      document.body.classList.add('admin');
       welcomeMessage.textContent = `Bem-vindo, Fernando! Administre a Trilha da Fortuna!`;
       document.getElementById('post-form').style.display = 'block';
       document.querySelector('.admin-only').style.display = 'table-cell';
@@ -43,12 +47,13 @@ firebase.auth().onAuthStateChanged(async (user) => {
       console.log('Carregando submissões para administrador');
       await loadSubmissions();
     } else {
+      document.body.classList.remove('admin');
       const userName = user.displayName || user.email.split('@')[0];
       welcomeMessage.textContent = `Bem-vindo, ${userName}! Explore a Trilha da Fortuna!`;
     }
 
     loadRanking(isAdmin);
-    loadPosts(user);
+    loadPosts(user, isAdmin);
     loadChallenges(user.uid, isAdmin);
   } catch (error) {
     console.error('Erro durante autenticação:', error.code, error.message);
@@ -495,20 +500,20 @@ function loadRanking(isAdmin) {
     });
 }
 
-// Abrir modal de exclusão
+// Abrir modal de exclusão de usuário
 function openDeleteModal(userId, userName) {
   userToDelete = { id: userId, name: userName };
   document.getElementById('delete-user-name').textContent = userName;
   document.getElementById('delete-modal').style.display = 'flex';
 }
 
-// Fechar modal
+// Fechar modal de exclusão de usuário
 function closeModal() {
   userToDelete = null;
   document.getElementById('delete-modal').style.display = 'none';
 }
 
-// Confirmar exclusão
+// Confirmar exclusão de usuário
 function confirmDelete() {
   if (!userToDelete) return;
 
@@ -582,7 +587,8 @@ function createPost() {
   });
 }
 
-function loadPosts(currentUser) {
+// Carregar posts com botões de exclusão para administrador
+function loadPosts(currentUser, isAdmin) {
   if (!currentUser) {
     console.error('Nenhum usuário autenticado. Redirecionando para login.');
     window.location.href = 'index.html';
@@ -612,6 +618,7 @@ function loadPosts(currentUser) {
             <div class="post-info">
               <div class="post-author">${post.author}</div>
               <div class="post-time">${formatTimestamp(post.timestamp)}</div>
+              ${isAdmin ? `<button class="delete-post-btn" onclick="openDeletePostModal('${postId}')">Excluir Post</button>` : ''}
             </div>
           </div>
           <div class="post-content">${post.content}</div>
@@ -645,11 +652,14 @@ function loadPosts(currentUser) {
           }
           commentsSnapshot.forEach((commentDoc) => {
             const comment = commentDoc.data();
+            const commentId = commentDoc.id;
             const commentElement = document.createElement('div');
             commentElement.className = 'comment';
             commentElement.innerHTML = `
               <div class="comment-author">${comment.author}</div>
-              <div class="comment-content">${comment.content}</div>
+              <div class="comment-content">${comment.content}
+                ${isAdmin ? `<button class="delete-comment-btn" onclick="openDeleteCommentModal('${postId}', '${commentId}')">Excluir</button>` : ''}
+              </div>
             `;
             commentsContainer.insertBefore(commentElement, commentForm);
           });
@@ -758,4 +768,90 @@ function formatTimestamp(timestamp) {
   if (!timestamp) return 'Agora';
   const date = timestamp.toDate();
   return date.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+}
+
+// Funções para exclusão de posts
+function openDeletePostModal(postId) {
+  postToDelete = postId;
+  document.getElementById('delete-post-modal').style.display = 'flex';
+}
+
+function closePostModal() {
+  postToDelete = null;
+  document.getElementById('delete-post-modal').style.display = 'none';
+}
+
+async function confirmDeletePost() {
+  if (!postToDelete) return;
+
+  try {
+    const currentUser = firebase.auth().currentUser;
+    if (!currentUser || currentUser.email !== 'fernandolapa1987@gmail.com') {
+      throw new Error('Apenas o administrador pode excluir posts.');
+    }
+
+    await currentUser.getIdToken(true);
+    console.log('Excluindo post:', postToDelete);
+
+    const postRef = db.collection('posts').doc(postToDelete);
+    const batch = db.batch();
+
+    // Excluir o post
+    batch.delete(postRef);
+
+    // Excluir curtidas do post
+    const likesSnapshot = await db.collection(`posts/${postToDelete}/likes`).get();
+    likesSnapshot.forEach((likeDoc) => {
+      batch.delete(likeDoc.ref);
+    });
+
+    // Excluir comentários do post
+    const commentsSnapshot = await db.collection(`posts/${postToDelete}/comments`).get();
+    commentsSnapshot.forEach((commentDoc) => {
+      batch.delete(commentDoc.ref);
+    });
+
+    await batch.commit();
+    console.log('Post excluído com sucesso:', postToDelete);
+    closePostModal();
+  } catch (error) {
+    console.error('Erro ao excluir post:', error.code, error.message);
+    alert('Erro ao excluir post: ' + error.message);
+    closePostModal();
+  }
+}
+
+// Funções para exclusão de comentários
+function openDeleteCommentModal(postId, commentId) {
+  commentToDelete = { postId, commentId };
+  document.getElementById('delete-comment-modal').style.display = 'flex';
+}
+
+function closeCommentModal() {
+  commentToDelete = null;
+  document.getElementById('delete-comment-modal').style.display = 'none';
+}
+
+async function confirmDeleteComment() {
+  if (!commentToDelete) return;
+
+  try {
+    const currentUser = firebase.auth().currentUser;
+    if (!currentUser || currentUser.email !== 'fernandolapa1987@gmail.com') {
+      throw new Error('Apenas o administrador pode excluir comentários.');
+    }
+
+    await currentUser.getIdToken(true);
+    console.log('Excluindo comentário:', commentToDelete.commentId, 'do post:', commentToDelete.postId);
+
+    const commentRef = db.collection(`posts/${commentToDelete.postId}/comments`).doc(commentToDelete.commentId);
+    await commentRef.delete();
+
+    console.log('Comentário excluído com sucesso:', commentToDelete.commentId);
+    closeCommentModal();
+  } catch (error) {
+    console.error('Erro ao excluir comentário:', error.code, error.message);
+    alert('Erro ao excluir comentário: ' + error.message);
+    closeCommentModal();
+  }
 }
