@@ -14,10 +14,12 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const storage = firebase.storage();
 
-// Variáveis globais para exclusão
+// Variáveis globais para exclusão e edição
 let userToDelete = null;
 let postToDelete = null;
 let commentToDelete = null;
+let postToEdit = null;
+let commentToEdit = null;
 
 // Verificar estado de autenticação
 firebase.auth().onAuthStateChanged(async (user) => {
@@ -36,7 +38,7 @@ firebase.auth().onAuthStateChanged(async (user) => {
     const isAdmin = user.email === 'fernandolapa1987@gmail.com';
     localStorage.setItem('isAdmin', isAdmin);
 
-    // Adicionar classe admin ao body para exibir botões de exclusão
+    // Adicionar classe admin ao body para exibir botões de exclusão e edição
     if (isAdmin) {
       document.body.classList.add('admin');
       welcomeMessage.textContent = `Bem-vindo, Fernando! Administre a Trilha da Fortuna!`;
@@ -587,7 +589,7 @@ function createPost() {
   });
 }
 
-// Carregar posts com botões de exclusão para administrador
+// Carregar posts com botões de exclusão e edição para administrador
 function loadPosts(currentUser, isAdmin) {
   if (!currentUser) {
     console.error('Nenhum usuário autenticado. Redirecionando para login.');
@@ -618,7 +620,10 @@ function loadPosts(currentUser, isAdmin) {
             <div class="post-info">
               <div class="post-author">${post.author}</div>
               <div class="post-time">${formatTimestamp(post.timestamp)}</div>
-              ${isAdmin ? `<button class="delete-post-btn" onclick="openDeletePostModal('${postId}')">Excluir Post</button>` : ''}
+              ${isAdmin ? `
+                <button class="edit-post-btn" onclick="openEditPostModal('${postId}', \`${post.content}\`)">Editar</button>
+                <button class="delete-post-btn" onclick="openDeletePostModal('${postId}')">Excluir</button>
+              ` : ''}
             </div>
           </div>
           <div class="post-content">${post.content}</div>
@@ -658,7 +663,10 @@ function loadPosts(currentUser, isAdmin) {
             commentElement.innerHTML = `
               <div class="comment-author">${comment.author}</div>
               <div class="comment-content">${comment.content}
-                ${isAdmin ? `<button class="delete-comment-btn" onclick="openDeleteCommentModal('${postId}', '${commentId}')">Excluir</button>` : ''}
+                ${isAdmin ? `
+                  <button class="edit-comment-btn" onclick="openEditCommentModal('${postId}', '${commentId}', \`${comment.content}\`)">Editar</button>
+                  <button class="delete-comment-btn" onclick="openDeleteCommentModal('${postId}', '${commentId}')">Excluir</button>
+                ` : ''}
               </div>
             `;
             commentsContainer.insertBefore(commentElement, commentForm);
@@ -853,5 +861,97 @@ async function confirmDeleteComment() {
     console.error('Erro ao excluir comentário:', error.code, error.message);
     alert('Erro ao excluir comentário: ' + error.message);
     closeCommentModal();
+  }
+}
+
+// Funções para edição de posts
+function openEditPostModal(postId, content) {
+  postToEdit = postId;
+  document.getElementById('edit-post-content').value = content;
+  document.getElementById('edit-post-modal').style.display = 'flex';
+}
+
+function closeEditPostModal() {
+  postToEdit = null;
+  document.getElementById('edit-post-content').value = '';
+  document.getElementById('edit-post-modal').style.display = 'none';
+}
+
+async function confirmEditPost() {
+  if (!postToEdit) return;
+
+  const newContent = document.getElementById('edit-post-content').value.trim();
+  if (!newContent) {
+    alert('O conteúdo do post não pode estar vazio.');
+    return;
+  }
+
+  try {
+    const currentUser = firebase.auth().currentUser;
+    if (!currentUser || currentUser.email !== 'fernandolapa1987@gmail.com') {
+      throw new Error('Apenas o administrador pode editar posts.');
+    }
+
+    await currentUser.getIdToken(true);
+    console.log('Editando post:', postToEdit);
+
+    const postRef = db.collection('posts').doc(postToEdit);
+    await postRef.update({
+      content: newContent,
+      timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    console.log('Post editado com sucesso:', postToEdit);
+    closeEditPostModal();
+  } catch (error) {
+    console.error('Erro ao editar post:', error.code, error.message);
+    alert('Erro ao editar post: ' + error.message);
+    closeEditPostModal();
+  }
+}
+
+// Funções para edição de comentários
+function openEditCommentModal(postId, commentId, content) {
+  commentToEdit = { postId, commentId };
+  document.getElementById('edit-comment-content').value = content;
+  document.getElementById('edit-comment-modal').style.display = 'flex';
+}
+
+function closeEditCommentModal() {
+  commentToEdit = null;
+  document.getElementById('edit-comment-content').value = '';
+  document.getElementById('edit-comment-modal').style.display = 'none';
+}
+
+async function confirmEditComment() {
+  if (!commentToEdit) return;
+
+  const newContent = document.getElementById('edit-comment-content').value.trim();
+  if (!newContent) {
+    alert('O conteúdo do comentário não pode estar vazio.');
+    return;
+  }
+
+  try {
+    const currentUser = firebase.auth().currentUser;
+    if (!currentUser || currentUser.email !== 'fernandolapa1987@gmail.com') {
+      throw new Error('Apenas o administrador pode editar comentários.');
+    }
+
+    await currentUser.getIdToken(true);
+    console.log('Editando comentário:', commentToEdit.commentId, 'do post:', commentToEdit.postId);
+
+    const commentRef = db.collection(`posts/${commentToEdit.postId}/comments`).doc(commentToEdit.commentId);
+    await commentRef.update({
+      content: newContent,
+      timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    console.log('Comentário editado com sucesso:', commentToEdit.commentId);
+    closeEditCommentModal();
+  } catch (error) {
+    console.error('Erro ao editar comentário:', error.code, error.message);
+    alert('Erro ao editar comentário: ' + error.message);
+    closeEditCommentModal();
   }
 }
