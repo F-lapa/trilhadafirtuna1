@@ -365,6 +365,7 @@ main {
     margin-right: auto;
 }
 
+
 .post-form textarea#post-content {
     width: 100%;
     min-height: 150px;
@@ -378,6 +379,9 @@ main {
     background: #fff;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     transition: border-color 0.3s, box-shadow 0.3s;
+    pointer-events: auto !important;
+    user-select: text !important;
+    cursor: text !important;
 }
 
 .post-form textarea#post-content:focus {
@@ -385,6 +389,7 @@ main {
     border-color: #007bff;
     box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.2);
 }
+
 
 .post-form .file-upload {
     display: inline-flex;
