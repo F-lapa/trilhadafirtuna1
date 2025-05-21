@@ -15,7 +15,7 @@
                 <li><a href="#home" class="active">Home</a></li>
                 <li><a href="#ranking">Ranking</a></li>
                 <li><a href="#desafios">Desafios</a></li>
-                <li id="admin-panel" style="display: none;"><a href="#admin">Painel Admin</a></li>
+                <li><a href="#admin" class="admin-only" style="display: none;">Painel Admin</a></li>
             </ul>
         </nav>
         <button id="logout">Sair</button>
@@ -49,12 +49,13 @@
             </div>
             <div class="social-feed">
                 <h2>Feed da Comunidade</h2>
-                <div class="post-form">
+                <div class="post-form" id="post-form">
                     <textarea id="post-content" placeholder="No que você está pensando?"></textarea>
                     <input type="file" id="post-image" accept="image/*" style="display: none;" class="admin-only">
                     <button onclick="createPost()">Postar</button>
                 </div>
                 <div id="posts"></div>
+            </div>
         </section>
         <section id="ranking" class="section">
             <h2>Ranking de Jogadores</h2>
@@ -74,7 +75,7 @@
             <h2>Desafios Financeiros</h2>
             <div id="challenges-list" class="challenges-list"></div>
         </section>
-        <section id="admin" class="section">
+        <section id="admin" class="section admin-only" style="display: none;">
             <h2>Painel do Administrador</h2>
             <div class="admin-form">
                 <h3>Cadastrar Novo Usuário</h3>
