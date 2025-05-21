@@ -202,6 +202,12 @@ main {
     transform: translateY(0);
 }
 
+.section#admin.active {
+    display: block; /* Garante que a seção admin seja visível */
+}
+
+
+
 /* Home Section */
 .welcome-banner {
     background: linear-gradient(135deg, #00C4B4, #1A3C34);
