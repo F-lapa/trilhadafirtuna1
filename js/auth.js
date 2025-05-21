@@ -38,6 +38,7 @@ document.addEventListener('click', (e) => {
 });
 
 // Verificar estado de autenticação
+
 firebase.auth().onAuthStateChanged(async (user) => {
     if (!user) {
         console.log('Nenhum usuário autenticado, redirecionando para login');
@@ -55,14 +56,16 @@ firebase.auth().onAuthStateChanged(async (user) => {
             document.body.classList.add('admin');
             document.getElementById('welcome-message').textContent = `Bem-vindo, Fernando! Administre a Trilha da Fortuna!`;
             document.getElementById('post-form').style.display = 'block';
+            document.getElementById('post-image').style.display = 'block'; // Mostrar campo de upload
             document.querySelector('.admin-only').style.display = 'table-cell';
             document.getElementById('admin-panel').style.display = 'block';
-            console.log('Painel do administrador deve estar visível'); // Log para depuração
+            console.log('Painel do administrador deve estar visível');
             await loadSubmissions();
         } else {
             document.body.classList.remove('admin');
             const userName = user.displayName || user.email.split('@')[0];
             document.getElementById('welcome-message').textContent = `Bem-vindo, ${userName}! Explore a Trilha da Fortuna!`;
+            document.getElementById('post-image').style.display = 'none'; // Ocultar campo de upload
         }
 
         loadRanking(isAdmin);
@@ -445,9 +448,12 @@ async function confirmDelete() {
 }
 
 // Feed Social
+
 function createPost() {
-    const content = document.getElementById('post-content').value;
+    const content = document.getElementById('post-content').value.trim();
+    const imageInput = document.getElementById('post-image');
     const user = firebase.auth().currentUser;
+    const isAdmin = localStorage.getItem('isAdmin') === 'true';
 
     if (!user) {
         window.location.href = 'index.html';
@@ -459,17 +465,40 @@ function createPost() {
         return;
     }
 
-    db.collection('posts').add({
+    const postData = {
         content,
         author: user.displayName || user.email.split('@')[0],
         authorId: user.uid,
         timestamp: firebase.firestore.FieldValue.serverTimestamp()
-    }).then(() => {
-        document.getElementById('post-content').value = '';
-    }).catch((error) => {
-        console.error('Erro ao criar post:', error);
-        alert('Erro ao criar post: ' + error.message);
-    });
+    };
+
+    // Lidar com upload de imagem (apenas para admin)
+    const uploadPost = async () => {
+        try {
+            if (isAdmin && imageInput.files.length > 0) {
+                const file = imageInput.files[0];
+                if (!file.type.startsWith('image/')) {
+                    throw new Error('Por favor, selecione uma imagem válida.');
+                }
+                const storageRef = storage.ref(`posts/${postData.authorId}/${Date.now()}_${file.name}`);
+                console.log('Fazendo upload da imagem:', file.name);
+                await storageRef.put(file);
+                const imageUrl = await storageRef.getDownloadURL();
+                postData.imageUrl = imageUrl;
+                console.log('Imagem enviada com sucesso:', imageUrl);
+            }
+
+            await db.collection('posts').add(postData);
+            console.log('Post criado com sucesso');
+            document.getElementById('post-content').value = '';
+            imageInput.value = ''; // Limpar campo de imagem
+        } catch (error) {
+            console.error('Erro ao criar post:', error);
+            alert('Erro ao criar post: ' + error.message);
+        }
+    };
+
+    uploadPost();
 }
 
 // Carregar posts
@@ -510,6 +539,7 @@ function loadPosts(currentUser, isAdmin) {
                         </div>
                     </div>
                     <div class="post-content">${post.content}</div>
+                    ${post.imageUrl ? `<img src="${post.imageUrl}" class="post-image" alt="Imagem do post">` : ''}
                     <div class="post-actions">
                         <button id="like-${postId}" onclick="toggleLike('${postId}', '${currentUser.uid}')">
                             Curtir <span id="like-count-${postId}">(0)</span>
@@ -568,6 +598,19 @@ function loadPosts(currentUser, isAdmin) {
                     postElement.querySelector('.post-content').textContent = post.content;
                     postElement.querySelector('.post-author').textContent = post.author;
                     postElement.querySelector('.post-time').textContent = formatTimestamp(post.timestamp);
+                    const imageElement = postElement.querySelector('.post-image');
+                    if (post.imageUrl && !imageElement) {
+                        const contentElement = postElement.querySelector('.post-content');
+                        const img = document.createElement('img');
+                        img.src = post.imageUrl;
+                        img.className = 'post-image';
+                        img.alt = 'Imagem do post';
+                        contentElement.insertAdjacentElement('afterend', img);
+                    } else if (!post.imageUrl && imageElement) {
+                        imageElement.remove();
+                    } else if (post.imageUrl && imageElement) {
+                        imageElement.src = post.imageUrl;
+                    }
                 }
             } else if (change.type === 'removed') {
                 const postElement = document.getElementById(`post-${postId}`);
