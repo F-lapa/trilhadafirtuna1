@@ -296,8 +296,15 @@ main {
     margin-bottom: 1.5rem;
 }
 
+#post-form-error {
+    color: #FF4D4F;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+    text-align: center;
+}
+
 .post-form {
-    display: none;
+    display: none !important;
     flex-direction: column;
     gap: 1rem;
     margin-bottom: 2rem;
@@ -306,13 +313,13 @@ main {
     margin-right: auto;
 }
 
-.admin .post-form {
+body.admin .post-form {
     display: flex !important;
     pointer-events: auto !important;
     opacity: 1 !important;
 }
 
-.post-form textarea#post-content {
+body.admin .post-form textarea#post-content {
     width: 100%;
     min-height: 150px;
     padding: 1rem;
@@ -331,14 +338,14 @@ main {
     opacity: 1 !important;
 }
 
-.post-form textarea#post-content:focus {
+body.admin .post-form textarea#post-content:focus {
     outline: none;
     border-color: #007bff;
     box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.2);
 }
 
-.post-form .file-upload {
-    display: none;
+body.admin .post-form .file-upload {
+    display: inline-flex !important;
     align-items: center;
     padding: 0.75rem 1.5rem;
     background: #f8f9fa;
@@ -352,17 +359,13 @@ main {
     pointer-events: auto !important;
 }
 
-.admin .post-form .file-upload {
-    display: inline-flex !important;
-}
-
-.post-form .file-upload:hover {
+body.admin .post-form .file-upload:hover {
     background: #e9ecef;
     border-color: #007bff;
 }
 
-.post-form button#post-button {
-    display: none;
+body.admin .post-form button#post-button {
+    display: block !important;
     padding: 0.75rem 1.5rem;
     background: #007bff;
     color: #fff;
@@ -376,16 +379,12 @@ main {
     pointer-events: auto !important;
 }
 
-.admin .post-form button#post-button {
-    display: block !important;
-}
-
-.post-form button#post-button:hover {
+body.admin .post-form button#post-button:hover {
     background: #0056b3;
 }
 
 .post-form input[type="file"] {
-    display: none;
+    display: none !important;
 }
 
 .post {
