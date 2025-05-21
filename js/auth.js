@@ -92,73 +92,59 @@ firebase.auth().onAuthStateChanged(async (user) => {
                     readonly: element.readOnly,
                     pointerEvents: element.style.pointerEvents,
                     userSelect: element.style.userSelect,
-                    id: element.id,
-                    className: element.className
+                    id: element.id
                 });
             } else {
                 console.error(`Elemento #post-content NÃO ENCONTRADO (${context})`);
             }
         }
 
-        // Habilitar imediatamente
-        enableTextarea(postContent, 'inicial');
-
-        // Garantir que o post-form seja interativo
-        if (postForm) {
-            postForm.style.pointerEvents = 'auto';
-            postForm.style.userSelect = 'text';
-            postForm.style.display = 'block';
-            console.log('Elemento #post-form configurado como interativo');
-        } else {
-            console.error('Elemento #post-form NÃO ENCONTRADO');
-        }
-
-        // Após carregamento completo do DOM
-        window.addEventListener('load', () => {
-            const postContentRetry = document.getElementById('post-content');
-            enableTextarea(postContentRetry, 'após load');
-        });
-
-        // Observar mudanças no DOM (caso o textarea seja adicionado depois)
-        const observer = new MutationObserver(() => {
-            const postContentDynamic = document.getElementById('post-content');
-            if (postContentDynamic) {
-                enableTextarea(postContentDynamic, 'via MutationObserver');
-                observer.disconnect(); // Para após encontrar
-            }
-        });
-        observer.observe(document.body, { childList: true, subtree: true });
-
-        // Verificação contínua por 10 segundos
-        const enableInterval = setInterval(() => {
-            const postContentInterval = document.getElementById('post-content');
-            enableTextarea(postContentInterval, 'via setInterval');
-            if (postContentInterval) {
-                clearInterval(enableInterval);
-            }
-        }, 500);
-        setTimeout(() => clearInterval(enableInterval), 10000);
-
         // Configuração para administrador
         if (isAdmin) {
             console.log('Configurando interface para administrador');
             document.body.classList.add('admin');
 
-            if (welcomeMessage) {
-                welcomeMessage.textContent = `Bem-vindo, Fernando! Administre a Trilha da Fortuna!`;
+            // Mostrar e habilitar o formulário de postagem
+            if (postForm) {
+                postForm.style.display = 'block';
+                postForm.style.pointerEvents = 'auto';
+                postForm.style.userSelect = 'text';
+                console.log('Formulário #post-form visível e interativo para admin');
             } else {
-                console.warn('Elemento #welcome-message não encontrado');
+                console.error('Elemento #post-form NÃO ENCONTRADO');
             }
 
+            // Habilitar o textarea
+            enableTextarea(postContent, 'admin inicial');
+
+            // Verificação após carregamento do DOM
+            window.addEventListener('load', () => {
+                const postContentRetry = document.getElementById('post-content');
+                enableTextarea(postContentRetry, 'admin após load');
+            });
+
+            // Observar mudanças no DOM
+            const observer = new MutationObserver(() => {
+                const postContentDynamic = document.getElementById('post-content');
+                if (postContentDynamic) {
+                    enableTextarea(postContentDynamic, 'admin via MutationObserver');
+                    observer.disconnect();
+                }
+            });
+            observer.observe(document.body, { childList: true, subtree: true });
+
+            // Botão de upload de imagem
             if (postImage) {
                 const fileUpload = postImage.parentElement.querySelector('.file-upload');
                 if (fileUpload) {
                     fileUpload.style.display = 'inline-flex';
+                    console.log('Botão de upload de imagem visível para admin');
                 }
             } else {
                 console.warn('Elemento #post-image não encontrado');
             }
 
+            // Painel admin
             if (adminSection) {
                 adminSection.style.display = 'block';
             } else {
@@ -177,8 +163,17 @@ firebase.auth().onAuthStateChanged(async (user) => {
 
             await loadSubmissions();
         } else {
+            // Configuração para usuário comum
             console.log('Configurando interface para usuário comum');
             document.body.classList.remove('admin');
+
+            // Ocultar o formulário de postagem
+            if (postForm) {
+                postForm.style.display = 'none';
+                console.log('Formulário #post-form OCULTO para usuário comum');
+            } else {
+                console.error('Elemento #post-form NÃO ENCONTRADO');
+            }
 
             if (welcomeMessage) {
                 const userName = user.displayName || user.email.split('@')[0];
