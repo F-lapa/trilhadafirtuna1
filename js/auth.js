@@ -32,11 +32,6 @@ let commentToDelete = null;
 let postToEdit = null;
 let commentToEdit = null;
 
-// Função auxiliar para aguardar propagação do token
-function wait(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
-
 // Fechar dropdowns ao clicar fora
 document.addEventListener('click', (e) => {
     if (!e.target.closest('.menu-dots') && !e.target.closest('.menu-dropdown')) {
@@ -45,14 +40,6 @@ document.addEventListener('click', (e) => {
         });
     }
 });
-
-// Registrar evento do botão Postar
-const postButton = document.getElementById('post-button');
-if (postButton) {
-    postButton.addEventListener('click', createPost);
-} else {
-    console.warn('Botão #post-button não encontrado');
-}
 
 // Verificar estado de autenticação
 firebase.auth().onAuthStateChanged(async (user) => {
@@ -64,6 +51,7 @@ firebase.auth().onAuthStateChanged(async (user) => {
 
     console.log('Usuário autenticado:', user.email, 'UID:', user.uid);
     console.log('Página atual:', window.location.pathname);
+
     try {
         await user.getIdToken(true);
         const isAdmin = user.email === 'fernandolapa1987@gmail.com';
@@ -78,27 +66,55 @@ firebase.auth().onAuthStateChanged(async (user) => {
         const adminNavLink = document.querySelector('nav a[href="#admin"]');
         const adminOnlyElements = document.querySelectorAll('.admin-only');
 
-        // Função para habilitar o textarea
-        function enableTextarea(element, context) {
-            if (element) {
-                element.removeAttribute('disabled');
-                element.removeAttribute('readonly');
-                element.style.pointerEvents = 'auto';
-                element.style.userSelect = 'text';
-                element.style.cursor = 'text';
-                element.style.opacity = '1';
-                element.style.display = 'block';
-                element.focus();
-                console.log(`Textarea #post-content habilitado (${context})`, {
-                    disabled: element.disabled,
-                    readonly: element.readOnly,
-                    pointerEvents: element.style.pointerEvents,
-                    userSelect: element.style.userSelect,
-                    display: element.style.display,
-                    id: element.id
+        // Função para habilitar elementos do formulário
+        function enableFormElements() {
+            if (postForm) {
+                postForm.style.display = 'flex';
+                postForm.style.pointerEvents = 'auto';
+                postForm.style.opacity = '1';
+                console.log('Formulário #post-form configurado como visível e interativo');
+            } else {
+                console.error('Elemento #post-form não encontrado');
+            }
+
+            if (postContent) {
+                postContent.removeAttribute('disabled');
+                postContent.removeAttribute('readonly');
+                postContent.style.pointerEvents = 'auto';
+                postContent.style.userSelect = 'text';
+                postContent.style.cursor = 'text';
+                postContent.style.opacity = '1';
+                console.log('Textarea #post-content habilitado', {
+                    disabled: postContent.disabled,
+                    readonly: postContent.readOnly,
+                    pointerEvents: postContent.style.pointerEvents,
+                    userSelect: postContent.style.userSelect,
+                    cursor: postContent.style.cursor
                 });
             } else {
-                console.error(`Elemento #post-content NÃO ENCONTRADO (${context})`);
+                console.error('Elemento #post-content não encontrado');
+            }
+
+            if (postImage) {
+                const fileUpload = postImage.parentElement.querySelector('.file-upload');
+                if (fileUpload) {
+                    fileUpload.style.display = 'inline-flex';
+                    fileUpload.style.pointerEvents = 'auto';
+                    console.log('Botão de upload de imagem configurado como visível');
+                }
+            } else {
+                console.error('Elemento #post-image não encontrado');
+            }
+
+            if (postButton) {
+                postButton.style.display = 'block';
+                postButton.style.pointerEvents = 'auto';
+                console.log('Botão #post-button configurado como visível e interativo');
+                // Garante que o evento do botão esteja registrado
+                postButton.removeEventListener('click', createPost); // Evita múltiplos listeners
+                postButton.addEventListener('click', createPost);
+            } else {
+                console.error('Elemento #post-button não encontrado');
             }
         }
 
@@ -106,69 +122,8 @@ firebase.auth().onAuthStateChanged(async (user) => {
         if (isAdmin) {
             console.log('Configurando interface para administrador');
             document.body.classList.add('admin');
+            enableFormElements();
 
-            // Mostrar e habilitar o formulário
-            if (postForm) {
-                postForm.style.display = 'block';
-                postForm.style.pointerEvents = 'auto';
-                postForm.style.userSelect = 'text';
-                postForm.style.opacity = '1';
-                console.log('Formulário #post-form VISÍVEL e INTERATIVO para admin');
-            } else {
-                console.error('Elemento #post-form NÃO ENCONTRADO');
-            }
-
-            // Habilitar o textarea
-            enableTextarea(postContent, 'admin inicial');
-
-            // Verificar após carregamento do DOM
-            window.addEventListener('load', () => {
-                const postContentRetry = document.getElementById('post-content');
-                enableTextarea(postContentRetry, 'admin após load');
-            });
-
-            // Observar mudanças no DOM
-            const observer = new MutationObserver(() => {
-                const postContentDynamic = document.getElementById('post-content');
-                if (postContentDynamic) {
-                    enableTextarea(postContentDynamic, 'admin via MutationObserver');
-                    observer.disconnect();
-                }
-            });
-            observer.observe(document.body, { childList: true, subtree: true });
-
-            // Verificação contínua por 10 segundos
-            const enableInterval = setInterval(() => {
-                const postContentInterval = document.getElementById('post-content');
-                enableTextarea(postContentInterval, 'admin via setInterval');
-                if (postContentInterval) {
-                    clearInterval(enableInterval);
-                }
-            }, 500);
-            setTimeout(() => clearInterval(enableInterval), 10000);
-
-            // Botão de upload de imagem
-            if (postImage) {
-                const fileUpload = postImage.parentElement.querySelector('.file-upload');
-                if (fileUpload) {
-                    fileUpload.style.display = 'inline-flex';
-                    fileUpload.style.pointerEvents = 'auto';
-                    console.log('Botão de upload de imagem VISÍVEL para admin');
-                }
-            } else {
-                console.warn('Elemento #post-image não encontrado');
-            }
-
-            // Verificar botão Postar
-            if (postButton) {
-                postButton.style.display = 'block';
-                postButton.style.pointerEvents = 'auto';
-                console.log('Botão #post-button VISÍVEL e INTERATIVO para admin');
-            } else {
-                console.error('Elemento #post-button NÃO ENCONTRADO');
-            }
-
-            // Painel admin
             if (adminSection) {
                 adminSection.style.display = 'block';
             } else {
@@ -191,13 +146,12 @@ firebase.auth().onAuthStateChanged(async (user) => {
             console.log('Configurando interface para usuário comum');
             document.body.classList.remove('admin');
 
-            // Ocultar o formulário
             if (postForm) {
                 postForm.style.display = 'none';
                 postForm.style.pointerEvents = 'none';
-                console.log('Formulário #post-form OCULTO para usuário comum');
+                console.log('Formulário #post-form oculto para usuário comum');
             } else {
-                console.error('Elemento #post-form NÃO ENCONTRADO');
+                console.error('Elemento #post-form não encontrado');
             }
 
             if (welcomeMessage) {
@@ -239,13 +193,16 @@ firebase.auth().onAuthStateChanged(async (user) => {
             });
         }
 
+        // Carregar dados
         loadRanking(isAdmin);
         loadPosts(user, isAdmin);
         loadChallenges(user.uid, isAdmin);
+
+        // Verificação após carregamento do DOM
+        document.addEventListener('DOMContentLoaded', enableFormElements, { once: true });
     } catch (error) {
         console.error('Erro durante autenticação:', error);
         alert('Erro na autenticação: ' + error.message);
-        console.warn('Erro capturado, mantendo usuário logado. Verifique os elementos DOM.');
     }
 });
 
@@ -661,16 +618,24 @@ function createPost() {
     const isAdmin = localStorage.getItem('isAdmin') === 'true';
 
     if (!user) {
+        console.error('Nenhum usuário autenticado');
         window.location.href = 'index.html';
         return;
     }
 
+    if (!isAdmin) {
+        console.error('Apenas administradores podem postar');
+        alert('Apenas administradores podem postar.');
+        return;
+    }
+
     if (!content) {
+        console.error('Conteúdo do post vazio');
         alert('Escreva algo para postar.');
         return;
     }
 
-    console.log('Conteúdo do post:', content); // Log para depuração
+    console.log('Criando post com conteúdo:', content);
 
     const postData = {
         content,
@@ -679,10 +644,9 @@ function createPost() {
         timestamp: firebase.firestore.FieldValue.serverTimestamp()
     };
 
-    // Lidar com upload de imagem (apenas para admin)
     const uploadPost = async () => {
         try {
-            if (isAdmin && imageInput && imageInput.files.length > 0) {
+            if (imageInput && imageInput.files.length > 0) {
                 const file = imageInput.files[0];
                 if (!file.type.startsWith('image/')) {
                     throw new Error('Por favor, selecione uma imagem válida.');
@@ -960,39 +924,20 @@ async function confirmDeletePost() {
             throw new Error('Apenas o administrador pode excluir posts.');
         }
 
-        console.log('Usuário atual:', currentUser.email, 'UID:', currentUser.uid);
-        console.log('Renovando token para exclusão do post:', postToDelete);
-        const token = await currentUser.getIdToken(true);
-        console.log('Token renovado:', token.substring(0, 50) + '...');
-        await wait(100);
-
-        console.log('Tentando excluir o post:', postToDelete);
+        await currentUser.getIdToken(true);
         const postRef = db.collection('posts').doc(postToDelete);
         await postRef.delete();
-        console.log('Post principal excluído com sucesso:', postToDelete);
 
         const batch = db.batch();
         const likesSnapshot = await db.collection(`posts/${postToDelete}/likes`).get();
-        console.log(`Encontrados ${likesSnapshot.size} likes para excluir`);
-        likesSnapshot.forEach(doc => {
-            console.log('Excluindo like:', doc.id, 'Dados:', doc.data());
-            batch.delete(doc.ref);
-        });
-
+        likesSnapshot.forEach(doc => batch.delete(doc.ref));
         const commentsSnapshot = await db.collection(`posts/${postToDelete}/comments`).get();
-        console.log(`Encontrados ${commentsSnapshot.size} comentários para excluir`);
-        commentsSnapshot.forEach(doc => {
-            console.log('Excluindo comentário:', doc.id, 'Dados:', doc.data());
-            batch.delete(doc.ref);
-        });
-
-        console.log('Executando batch commit para likes e comentários');
+        commentsSnapshot.forEach(doc => batch.delete(doc.ref));
         await batch.commit();
-        console.log('Batch commit concluído com sucesso');
 
         closePostModal();
     } catch (error) {
-        console.error('Erro ao excluir post:', error, 'Código:', error.code, 'Mensagem:', error.message);
+        console.error('Erro ao excluir post:', error);
         alert('Erro ao excluir post: ' + error.message);
         closePostModal();
     }
@@ -1139,17 +1084,3 @@ async function confirmEditComment() {
         closeEditCommentModal();
     }
 }
-
-setTimeout(() => {
-    const postContent = document.getElementById('post-content');
-    if (postContent) {
-        postContent.removeAttribute('disabled');
-        postContent.removeAttribute('readonly');
-        postContent.style.pointerEvents = 'auto';
-        postContent.style.userSelect = 'text';
-        postContent.style.cursor = 'text';
-        console.log('Textarea #post-content forçado após 3s');
-    } else {
-        console.error('Elemento #post-content não encontrado após 3s');
-    }
-}, 3000);
