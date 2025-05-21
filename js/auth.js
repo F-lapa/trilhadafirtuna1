@@ -1,4 +1,3 @@
-
 // Configuração do Firebase
 const firebaseConfig = {
     apiKey: "AIzaSyB-MOmRFZFp2dzVIEWq9VZQj33fNJR-YV4",
@@ -12,9 +11,19 @@ const firebaseConfig = {
 
 // Inicializar Firebase
 firebase.initializeApp(firebaseConfig);
-console.log('Firebase inicializado com sucesso. Versão:', firebase.SDK_VERSION); // Log para depuração
+console.log('Firebase inicializado com sucesso. Versão:', firebase.SDK_VERSION);
 const db = firebase.firestore();
 const storage = firebase.storage();
+
+// Redirecionamento após login (se aplicável)
+if (window.location.pathname.includes('login.html')) {
+    firebase.auth().onAuthStateChanged((user) => {
+        if (user) {
+            console.log('Usuário logado, redirecionando para software.html');
+            window.location.href = 'software.html';
+        }
+    });
+}
 
 // Variáveis globais
 let userToDelete = null;
@@ -38,7 +47,6 @@ document.addEventListener('click', (e) => {
 });
 
 // Verificar estado de autenticação
-
 firebase.auth().onAuthStateChanged(async (user) => {
     if (!user) {
         console.log('Nenhum usuário autenticado, redirecionando para login');
@@ -47,25 +55,96 @@ firebase.auth().onAuthStateChanged(async (user) => {
     }
 
     console.log('Usuário autenticado:', user.email, 'UID:', user.uid);
+    console.log('Página atual:', window.location.pathname);
     try {
         await user.getIdToken(true);
         const isAdmin = user.email === 'fernandolapa1987@gmail.com';
         localStorage.setItem('isAdmin', isAdmin);
 
+        const welcomeMessage = document.getElementById('welcome-message');
+        const postForm = document.getElementById('post-form');
+        const postImage = document.getElementById('post-image');
+        const adminSection = document.getElementById('admin');
+        const adminNavLink = document.querySelector('nav a[href="#admin"]');
+        const adminOnlyElements = document.querySelectorAll('.admin-only');
+
         if (isAdmin) {
+            console.log('Configurando interface para administrador');
             document.body.classList.add('admin');
-            document.getElementById('welcome-message').textContent = `Bem-vindo, Fernando! Administre a Trilha da Fortuna!`;
-            document.getElementById('post-form').style.display = 'block';
-            document.getElementById('post-image').style.display = 'block'; // Mostrar campo de upload
-            document.querySelector('.admin-only').style.display = 'table-cell';
-            document.getElementById('admin-panel').style.display = 'block';
-            console.log('Painel do administrador deve estar visível');
+
+            if (welcomeMessage) {
+                welcomeMessage.textContent = `Bem-vindo, Fernando! Administre a Trilha da Fortuna!`;
+            } else {
+                console.warn('Elemento #welcome-message não encontrado');
+            }
+
+            if (postForm) {
+                postForm.style.display = 'block';
+            } else {
+                console.warn('Elemento #post-form não encontrado');
+            }
+
+            if (postImage) {
+                postImage.style.display = 'block';
+            } else {
+                console.warn('Elemento #post-image não encontrado');
+            }
+
+            if (adminSection) {
+                adminSection.style.display = 'block';
+            } else {
+                console.warn('Elemento #admin não encontrado');
+            }
+
+            if (adminNavLink) {
+                adminNavLink.style.display = 'block';
+            } else {
+                console.warn('Link de navegação #admin não encontrado');
+            }
+
+            adminOnlyElements.forEach(el => {
+                el.style.display = el.tagName === 'TH' ? 'table-cell' : 'block';
+            });
+
             await loadSubmissions();
         } else {
+            console.log('Configurando interface para usuário comum');
             document.body.classList.remove('admin');
-            const userName = user.displayName || user.email.split('@')[0];
-            document.getElementById('welcome-message').textContent = `Bem-vindo, ${userName}! Explore a Trilha da Fortuna!`;
-            document.getElementById('post-image').style.display = 'none'; // Ocultar campo de upload
+
+            if (welcomeMessage) {
+                const userName = user.displayName || user.email.split('@')[0];
+                welcomeMessage.textContent = `Bem-vindo, ${userName}! Explore a Trilha da Fortuna!`;
+            } else {
+                console.warn('Elemento #welcome-message não encontrado');
+            }
+
+            if (postForm) {
+                postForm.style.display = 'block';
+            } else {
+                console.warn('Elemento #post-form não encontrado');
+            }
+
+            if (postImage) {
+                postImage.style.display = 'none';
+            } else {
+                console.warn('Elemento #post-image não encontrado');
+            }
+
+            if (adminSection) {
+                adminSection.style.display = 'none';
+            } else {
+                console.warn('Elemento #admin não encontrado');
+            }
+
+            if (adminNavLink) {
+                adminNavLink.style.display = 'none';
+            } else {
+                console.warn('Link de navegação #admin não encontrado');
+            }
+
+            adminOnlyElements.forEach(el => {
+                el.style.display = 'none';
+            });
         }
 
         loadRanking(isAdmin);
@@ -74,7 +153,7 @@ firebase.auth().onAuthStateChanged(async (user) => {
     } catch (error) {
         console.error('Erro durante autenticação:', error);
         alert('Erro na autenticação: ' + error.message);
-        window.location.href = 'index.html';
+        console.warn('Erro capturado, mantendo usuário logado. Verifique os elementos DOM.');
     }
 });
 
@@ -110,7 +189,7 @@ function navigateToSection(sectionId) {
     const targetSection = document.getElementById(sectionId);
     if (targetSection) {
         targetSection.classList.add('active');
-        console.log(`Navegando para a seção: ${sectionId}`); // Log para depuração
+        console.log(`Navegando para a seção: ${sectionId}`);
     } else {
         console.error(`Seção ${sectionId} não encontrada`);
     }
@@ -285,7 +364,10 @@ function loadChallenges(userId, isAdmin) {
 async function loadSubmissions() {
     const currentUser = firebase.auth().currentUser;
     if (!currentUser || currentUser.email !== 'fernandolapa1987@gmail.com') {
-        document.getElementById('submissions-list').innerHTML = '<p>Acesso negado.</p>';
+        const submissionsList = document.getElementById('submissions-list');
+        if (submissionsList) {
+            submissionsList.innerHTML = '<p>Acesso negado.</p>';
+        }
         return;
     }
 
@@ -322,7 +404,10 @@ async function loadSubmissions() {
         });
     } catch (error) {
         console.error('Erro ao carregar submissões:', error);
-        document.getElementById('submissions-list').innerHTML = `<p>Erro: ${error.message}</p>`;
+        const submissionsList = document.getElementById('submissions-list');
+        if (submissionsList) {
+            submissionsList.innerHTML = `<p>Erro: ${error.message}</p>`;
+        }
     }
 }
 
@@ -359,12 +444,14 @@ async function reviewSubmission(submissionId, userId, status) {
 function togglePassword(inputId) {
     const input = document.getElementById(inputId);
     const toggle = input.nextElementSibling;
-    if (input.type === 'password') {
-        input.type = 'text';
-        toggle.classList.add('active');
-    } else {
-        input.type = 'password';
-        toggle.classList.remove('active');
+    if (input && toggle) {
+        if (input.type === 'password') {
+            input.type = 'text';
+            toggle.classList.add('active');
+        } else {
+            input.type = 'password';
+            toggle.classList.remove('active');
+        }
     }
 }
 
@@ -406,19 +493,30 @@ function loadRanking(isAdmin) {
 // Toggle menu de usuário
 function toggleUserMenu(userId) {
     const dropdown = document.getElementById(`user-menu-${userId}`);
-    dropdown.classList.toggle('active');
+    if (dropdown) {
+        dropdown.classList.toggle('active');
+    }
 }
 
 // Exclusão de usuário
 function openDeleteModal(userId, userName) {
     userToDelete = { id: userId, name: userName };
-    document.getElementById('delete-user-name').textContent = userName;
-    document.getElementById('delete-modal').style.display = 'flex';
+    const deleteUserName = document.getElementById('delete-user-name');
+    if (deleteUserName) {
+        deleteUserName.textContent = userName;
+    }
+    const deleteModal = document.getElementById('delete-modal');
+    if (deleteModal) {
+        deleteModal.style.display = 'flex';
+    }
 }
 
 function closeModal() {
     userToDelete = null;
-    document.getElementById('delete-modal').style.display = 'none';
+    const deleteModal = document.getElementById('delete-modal');
+    if (deleteModal) {
+        deleteModal.style.display = 'none';
+    }
 }
 
 async function confirmDelete() {
@@ -448,7 +546,6 @@ async function confirmDelete() {
 }
 
 // Feed Social
-
 function createPost() {
     const content = document.getElementById('post-content').value.trim();
     const imageInput = document.getElementById('post-image');
@@ -475,7 +572,7 @@ function createPost() {
     // Lidar com upload de imagem (apenas para admin)
     const uploadPost = async () => {
         try {
-            if (isAdmin && imageInput.files.length > 0) {
+            if (isAdmin && imageInput && imageInput.files.length > 0) {
                 const file = imageInput.files[0];
                 if (!file.type.startsWith('image/')) {
                     throw new Error('Por favor, selecione uma imagem válida.');
@@ -490,8 +587,12 @@ function createPost() {
 
             await db.collection('posts').add(postData);
             console.log('Post criado com sucesso');
-            document.getElementById('post-content').value = '';
-            imageInput.value = ''; // Limpar campo de imagem
+            if (document.getElementById('post-content')) {
+                document.getElementById('post-content').value = '';
+            }
+            if (imageInput) {
+                imageInput.value = '';
+            }
         } catch (error) {
             console.error('Erro ao criar post:', error);
             alert('Erro ao criar post: ' + error.message);
@@ -509,6 +610,10 @@ function loadPosts(currentUser, isAdmin) {
     }
 
     const postsContainer = document.getElementById('posts');
+    if (!postsContainer) {
+        console.warn('Elemento #posts não encontrado');
+        return;
+    }
     postsContainer.innerHTML = '';
 
     db.collection('posts').orderBy('timestamp', 'desc').onSnapshot((snapshot) => {
@@ -687,7 +792,9 @@ function addComment(postId, userId) {
 
 function toggleComments(postId) {
     const commentsSection = document.getElementById(`comments-${postId}`);
-    commentsSection.style.display = commentsSection.style.display === 'none' ? 'block' : 'none';
+    if (commentsSection) {
+        commentsSection.style.display = commentsSection.style.display === 'none' ? 'block' : 'none';
+    }
 }
 
 function formatTimestamp(timestamp) {
@@ -697,24 +804,34 @@ function formatTimestamp(timestamp) {
 // Toggle menu de posts
 function togglePostMenu(postId) {
     const dropdown = document.getElementById(`menu-${postId}`);
-    dropdown.classList.toggle('active');
+    if (dropdown) {
+        dropdown.classList.toggle('active');
+    }
 }
 
 // Toggle menu de comentários
 function toggleCommentMenu(postId, commentId) {
     const dropdown = document.getElementById(`comment-menu-${postId}-${commentId}`);
-    dropdown.classList.toggle('active');
+    if (dropdown) {
+        dropdown.classList.toggle('active');
+    }
 }
 
 // Exclusão de posts
 function openDeletePostModal(postId) {
     postToDelete = postId;
-    document.getElementById('delete-post-modal').style.display = 'flex';
+    const deletePostModal = document.getElementById('delete-post-modal');
+    if (deletePostModal) {
+        deletePostModal.style.display = 'flex';
+    }
 }
 
 function closePostModal() {
     postToDelete = null;
-    document.getElementById('delete-post-modal').style.display = 'none';
+    const deletePostModal = document.getElementById('delete-post-modal');
+    if (deletePostModal) {
+        deletePostModal.style.display = 'none';
+    }
 }
 
 async function confirmDeletePost() {
@@ -731,17 +848,15 @@ async function confirmDeletePost() {
 
         console.log('Usuário atual:', currentUser.email, 'UID:', currentUser.uid);
         console.log('Renovando token para exclusão do post:', postToDelete);
-        const token = await currentUser.getIdToken(true); // Renovar token
+        const token = await currentUser.getIdToken(true);
         console.log('Token renovado:', token.substring(0, 50) + '...');
-        await wait(100); // Aguarda 100ms para propagação do token
+        await wait(100);
 
-        // Excluir o post principal
         console.log('Tentando excluir o post:', postToDelete);
         const postRef = db.collection('posts').doc(postToDelete);
         await postRef.delete();
         console.log('Post principal excluído com sucesso:', postToDelete);
 
-        // Excluir likes e comentários em um batch
         const batch = db.batch();
         const likesSnapshot = await db.collection(`posts/${postToDelete}/likes`).get();
         console.log(`Encontrados ${likesSnapshot.size} likes para excluir`);
@@ -772,14 +887,26 @@ async function confirmDeletePost() {
 // Edição de posts
 function openEditPostModal(postId, content) {
     postToEdit = postId;
-    document.getElementById('edit-post-content').value = content;
-    document.getElementById('edit-post-modal').style.display = 'flex';
+    const editPostContent = document.getElementById('edit-post-content');
+    const editPostModal = document.getElementById('edit-post-modal');
+    if (editPostContent) {
+        editPostContent.value = content;
+    }
+    if (editPostModal) {
+        editPostModal.style.display = 'flex';
+    }
 }
 
 function closeEditPostModal() {
     postToEdit = null;
-    document.getElementById('edit-post-content').value = '';
-    document.getElementById('edit-post-modal').style.display = 'none';
+    const editPostContent = document.getElementById('edit-post-content');
+    const editPostModal = document.getElementById('edit-post-modal');
+    if (editPostContent) {
+        editPostContent.value = '';
+    }
+    if (editPostModal) {
+        editPostModal.style.display = 'none';
+    }
 }
 
 async function confirmEditPost() {
@@ -810,17 +937,65 @@ async function confirmEditPost() {
     }
 }
 
+// Exclusão de comentários
+function openDeleteCommentModal(postId, commentId) {
+    commentToDelete = { postId, commentId };
+    const deleteCommentModal = document.getElementById('delete-comment-modal');
+    if (deleteCommentModal) {
+        deleteCommentModal.style.display = 'flex';
+    }
+}
+
+function closeCommentModal() {
+    commentToDelete = null;
+    const deleteCommentModal = document.getElementById('delete-comment-modal');
+    if (deleteCommentModal) {
+        deleteCommentModal.style.display = 'none';
+    }
+}
+
+async function confirmDeleteComment() {
+    if (!commentToDelete) return;
+
+    try {
+        const currentUser = firebase.auth().currentUser;
+        if (!currentUser || currentUser.email !== 'fernandolapa1987@gmail.com') {
+            throw new Error('Apenas o administrador pode excluir comentários.');
+        }
+
+        await currentUser.getIdToken(true);
+        await db.collection(`posts/${commentToDelete.postId}/comments`).doc(commentToDelete.commentId).delete();
+        closeCommentModal();
+    } catch (error) {
+        console.error('Erro ao excluir comentário:', error);
+        alert('Erro ao excluir comentário: ' + error.message);
+        closeCommentModal();
+    }
+}
+
 // Edição de comentários
 function openEditCommentModal(postId, commentId, content) {
     commentToEdit = { postId, commentId };
-    document.getElementById('edit-comment-content').value = content;
-    document.getElementById('edit-comment-modal').style.display = 'flex';
+    const editCommentContent = document.getElementById('edit-comment-content');
+    const editCommentModal = document.getElementById('edit-comment-modal');
+    if (editCommentContent) {
+        editCommentContent.value = content;
+    }
+    if (editCommentModal) {
+        editCommentModal.style.display = 'flex';
+    }
 }
 
 function closeEditCommentModal() {
     commentToEdit = null;
-    document.getElementById('edit-comment-content').value = '';
-    document.getElementById('edit-comment-modal').style.display = 'none';
+    const editCommentContent = document.getElementById('edit-comment-content');
+    const editCommentModal = document.getElementById('edit-comment-modal');
+    if (editCommentContent) {
+        editCommentContent.value = '';
+    }
+    if (editCommentModal) {
+        editCommentModal.style.display = 'none';
+    }
 }
 
 async function confirmEditComment() {
