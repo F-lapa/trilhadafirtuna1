@@ -689,11 +689,11 @@ async function confirmDeletePost() {
         console.log('Usuário atual:', currentUser.email, 'UID:', currentUser.uid);
         console.log('Renovando token para exclusão do post:', postToDelete);
         const token = await currentUser.getIdToken(true); // Renovar token
-        console.log('Token renovado:', token.substring(0, 50) + '...'); // Log parcial do token
+        console.log('Token renovado:', token.substring(0, 50) + '...');
         await wait(100); // Aguarda 100ms para propagação do token
 
-        // Testar exclusão apenas do post primeiro
-        console.log('Tentando excluir apenas o post:', postToDelete);
+        // Excluir o post principal
+        console.log('Tentando excluir o post:', postToDelete);
         const postRef = db.collection('posts').doc(postToDelete);
         await postRef.delete();
         console.log('Post principal excluído com sucesso:', postToDelete);
@@ -701,24 +701,26 @@ async function confirmDeletePost() {
         // Excluir likes e comentários em um batch
         const batch = db.batch();
         const likesSnapshot = await db.collection(`posts/${postToDelete}/likes`).get();
+        console.log(`Encontrados ${likesSnapshot.size} likes para excluir`);
         likesSnapshot.forEach(doc => {
-            console.log('Excluindo like:', doc.id);
+            console.log('Excluindo like:', doc.id, 'Dados:', doc.data());
             batch.delete(doc.ref);
         });
 
         const commentsSnapshot = await db.collection(`posts/${postToDelete}/comments`).get();
+        console.log(`Encontrados ${commentsSnapshot.size} comentários para excluir`);
         commentsSnapshot.forEach(doc => {
-            console.log('Excluindo comentário:', doc.id);
+            console.log('Excluindo comentário:', doc.id, 'Dados:', doc.data());
             batch.delete(doc.ref);
         });
 
         console.log('Executando batch commit para likes e comentários');
         await batch.commit();
-        console.log('Post e coleções associadas excluídos com sucesso');
+        console.log('Batch commit concluído com sucesso');
 
         closePostModal();
     } catch (error) {
-        console.error('Erro ao excluir post:', error);
+        console.error('Erro ao excluir post:', error, 'Código:', error.code, 'Mensagem:', error.message);
         alert('Erro ao excluir post: ' + error.message);
         closePostModal();
     }
