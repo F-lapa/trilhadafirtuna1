@@ -367,21 +367,46 @@ main {
 
 .post-form textarea#post-content {
     width: 100%;
-    min-height: 150px; /* Aumentado de ~100px para 150px */
+    min-height: 150px;
     padding: 1rem;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    resize: vertical; /* Permite redimensionamento vertical */
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    resize: vertical;
     font-size: 1rem;
+    font-family: 'Inter', sans-serif;
     box-sizing: border-box;
+    background: #fff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.post-form textarea#post-content:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.2);
+}
+
+.post-form .file-upload {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.75rem 1.5rem;
+    background: #f8f9fa;
+    color: #333;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-family: 'Inter', sans-serif;
+    transition: background 0.3s, border-color 0.3s;
+}
+
+.post-form .file-upload:hover {
+    background: #e9ecef;
+    border-color: #007bff;
 }
 
 .post-form input[type="file"] {
-    padding: 0.5rem;
-    font-size: 0.9rem;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    background: #fff;
+    display: none;
 }
 
 .post-form button {
@@ -389,14 +414,18 @@ main {
     background: #007bff;
     color: #fff;
     border: none;
-    border-radius: 4px;
+    border-radius: 8px;
     cursor: pointer;
+    font-size: 0.9rem;
+    font-family: 'Inter', sans-serif;
     align-self: flex-start;
+    transition: background 0.3s;
 }
 
 .post-form button:hover {
     background: #0056b3;
 }
+
 
 /* Estilo para posts */
 .post {
@@ -411,9 +440,10 @@ main {
 .post-image {
     max-width: 100%;
     height: auto;
-    border-radius: 8px;
+    border-radius: 12px;
     margin-top: 1rem;
     display: block;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 /* Responsividade */
