@@ -356,7 +356,7 @@ main {
 
 /* Formulário de postagem */
 .post-form {
-    display: flex;
+    display: none; /* Começa oculto, JavaScript mostra pro admin */
     flex-direction: column;
     gap: 1rem;
     margin-bottom: 2rem;
@@ -392,9 +392,8 @@ main {
     box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.2);
 }
 
-
 .post-form .file-upload {
-    display: inline-flex;
+    display: none; /* Começa oculto, JavaScript mostra pro admin */
     align-items: center;
     padding: 0.75rem 1.5rem;
     background: #f8f9fa;
@@ -410,10 +409,6 @@ main {
 .post-form .file-upload:hover {
     background: #e9ecef;
     border-color: #007bff;
-}
-
-.post-form input[type="file"] {
-    display: none;
 }
 
 .post-form button {
@@ -433,6 +428,9 @@ main {
     background: #0056b3;
 }
 
+.post-form input[type="file"] {
+    display: none;
+}
 
 /* Estilo para posts */
 .post {
