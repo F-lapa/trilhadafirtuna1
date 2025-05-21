@@ -7,9 +7,8 @@
     <link rel="stylesheet" href="css/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
     <style>
-        /* Estilos para botões de exclusão */
-        .delete-post-btn, .delete-comment-btn {
-            background-color: #ff4d4d;
+        /* Estilos para botões de exclusão e edição */
+        .delete-post-btn, .delete-comment-btn, .edit-post-btn, .edit-comment-btn {
             color: white;
             border: none;
             padding: 5px 10px;
@@ -19,10 +18,20 @@
             margin-left: 10px;
             display: none;
         }
+        .delete-post-btn, .delete-comment-btn {
+            background-color: #ff4d4d;
+        }
+        .edit-post-btn, .edit-comment-btn {
+            background-color: #4CAF50;
+        }
         .delete-post-btn:hover, .delete-comment-btn:hover {
             background-color: #cc0000;
         }
-        .admin .delete-post-btn, .admin .delete-comment-btn {
+        .edit-post-btn:hover, .edit-comment-btn:hover {
+            background-color: #45a049;
+        }
+        .admin .delete-post-btn, .admin .delete-comment-btn,
+        .admin .edit-post-btn, .admin .edit-comment-btn {
             display: inline-block;
         }
         /* Estilos para modais */
@@ -46,6 +55,13 @@
             max-width: 400px;
             width: 90%;
         }
+        .modal-content textarea {
+            width: 100%;
+            height: 100px;
+            margin: 10px 0;
+            padding: 8px;
+            font-size: 14px;
+        }
         .modal-actions {
             margin-top: 20px;
         }
@@ -55,13 +71,16 @@
             cursor: pointer;
         }
         .modal-actions button:first-child {
-            background-color: #ff4d4d;
+            background-color: #4CAF50;
             color: white;
             border: none;
         }
         .modal-actions button:last-child {
             background-color: #ccc;
             border: none;
+        }
+        .modal-actions .delete-btn {
+            background-color: #ff4d4d;
         }
     </style>
 </head>
@@ -192,7 +211,7 @@
                 <h3>Confirmar Exclusão</h3>
                 <p>Deseja realmente excluir o usuário <span id="delete-user-name"></span>? Esta ação é irreversível.</p>
                 <div class="modal-actions">
-                    <button onclick="confirmDelete()">Confirmar</button>
+                    <button class="delete-btn" onclick="confirmDelete()">Confirmar</button>
                     <button onclick="closeModal()">Cancelar</button>
                 </div>
             </div>
@@ -203,7 +222,7 @@
                 <h3>Confirmar Exclusão de Post</h3>
                 <p>Deseja realmente excluir este post? Esta ação é irreversível.</p>
                 <div class="modal-actions">
-                    <button onclick="confirmDeletePost()">Confirmar</button>
+                    <button class="delete-btn" onclick="confirmDeletePost()">Confirmar</button>
                     <button onclick="closePostModal()">Cancelar</button>
                 </div>
             </div>
@@ -214,8 +233,30 @@
                 <h3>Confirmar Exclusão de Comentário</h3>
                 <p>Deseja realmente excluir este comentário? Esta ação é irreversível.</p>
                 <div class="modal-actions">
-                    <button onclick="confirmDeleteComment()">Confirmar</button>
+                    <button class="delete-btn" onclick="confirmDeleteComment()">Confirmar</button>
                     <button onclick="closeCommentModal()">Cancelar</button>
+                </div>
+            </div>
+        </div>
+        <!-- Modal para Edição de Post -->
+        <div id="edit-post-modal" class="modal">
+            <div class="modal-content">
+                <h3>Editar Post</h3>
+                <textarea id="edit-post-content" placeholder="Edite o conteúdo do post"></textarea>
+                <div class="modal-actions">
+                    <button onclick="confirmEditPost()">Salvar</button>
+                    <button onclick="closeEditPostModal()">Cancelar</button>
+                </div>
+            </div>
+        </div>
+        <!-- Modal para Edição de Comentário -->
+        <div id="edit-comment-modal" class="modal">
+            <div class="modal-content">
+                <h3>Editar Comentário</h3>
+                <textarea id="edit-comment-content" placeholder="Edite o conteúdo do comentário"></textarea>
+                <div class="modal-actions">
+                    <button onclick="confirmEditComment()">Salvar</button>
+                    <button onclick="closeEditCommentModal()">Cancelar</button>
                 </div>
             </div>
         </div>
