@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Trilha da Fortuna - Sistema</title>
     <link rel="stylesheet" href="css/style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
     <header>
@@ -21,7 +21,7 @@
         <button id="logout">Sair</button>
     </header>
     <main>
-        <section id="home">
+        <section id="home" class="section active">
             <div class="welcome-banner">
                 <div class="carousel">
                     <div class="carousel-item active">Bem-vindo à Trilha da Fortuna!</div>
@@ -56,7 +56,7 @@
                 <div id="posts"></div>
             </div>
         </section>
-        <section id="ranking" style="display: none;">
+        <section id="ranking" class="section">
             <h2>Ranking de Jogadores</h2>
             <table class="ranking-table">
                 <thead>
@@ -67,18 +67,14 @@
                         <th class="admin-only" style="display: none;">Ação</th>
                     </tr>
                 </thead>
-                <tbody id="ranking-body">
-                    <!-- Dados dinâmicos inseridos via JavaScript -->
-                </tbody>
+                <tbody id="ranking-body"></tbody>
             </table>
         </section>
-        <section id="desafios" style="display: none;">
+        <section id="desafios" class="section">
             <h2>Desafios Financeiros</h2>
-            <div id="challenges-list" class="challenges-list">
-                <!-- Desafios dinâmicos inseridos via JavaScript -->
-            </div>
+            <div id="challenges-list" class="challenges-list"></div>
         </section>
-        <section id="admin" style="display: none;">
+        <section id="admin" class="section">
             <h2>Painel do Administrador</h2>
             <div class="admin-form">
                 <h3>Cadastrar Novo Usuário</h3>
@@ -123,69 +119,61 @@
             </div>
             <div class="admin-submissions">
                 <h3>Revisar Comprovantes</h3>
-                <div id="submissions-list">
-                    <!-- Envios pendentes inseridos via JavaScript -->
-                </div>
+                <div id="submissions-list"></div>
             </div>
         </section>
-        <!-- Modal de Confirmação para Exclusão de Usuário -->
+        <!-- Modais -->
         <div id="delete-modal" class="modal">
             <div class="modal-content">
                 <h3>Confirmar Exclusão</h3>
                 <p>Deseja realmente excluir o usuário <span id="delete-user-name"></span>? Esta ação é irreversível.</p>
                 <div class="modal-actions">
-                    <button class="delete-btn" onclick="confirmDelete()">Confirmar</button>
-                    <button onclick="closeModal()">Cancelar</button>
+                    <button class="modal-btn modal-btn-delete" onclick="confirmDelete()">Confirmar</button>
+                    <button class="modal-btn modal-btn-cancel" onclick="closeModal()">Cancelar</button>
                 </div>
             </div>
         </div>
-        <!-- Modal de Confirmação para Exclusão de Post -->
         <div id="delete-post-modal" class="modal">
             <div class="modal-content">
                 <h3>Confirmar Exclusão de Post</h3>
                 <p>Deseja realmente excluir este post? Esta ação é irreversível.</p>
                 <div class="modal-actions">
-                    <button class="delete-btn" onclick="confirmDeletePost()">Confirmar</button>
-                    <button onclick="closePostModal()">Cancelar</button>
+                    <button class="modal-btn modal-btn-delete" onclick="confirmDeletePost()">Confirmar</button>
+                    <button class="modal-btn modal-btn-cancel" onclick="closePostModal()">Cancelar</button>
                 </div>
             </div>
         </div>
-        <!-- Modal de Confirmação para Exclusão de Comentário -->
         <div id="delete-comment-modal" class="modal">
             <div class="modal-content">
                 <h3>Confirmar Exclusão de Comentário</h3>
                 <p>Deseja realmente excluir este comentário? Esta ação é irreversível.</p>
                 <div class="modal-actions">
-                    <button class="delete-btn" onclick="confirmDeleteComment()">Confirmar</button>
-                    <button onclick="closeCommentModal()">Cancelar</button>
+                    <button class="modal-btn modal-btn-delete" onclick="confirmDeleteComment()">Confirmar</button>
+                    <button class="modal-btn modal-btn-cancel" onclick="closeCommentModal()">Cancelar</button>
                 </div>
             </div>
         </div>
-        <!-- Modal para Edição de Post -->
         <div id="edit-post-modal" class="modal">
             <div class="modal-content">
                 <h3>Editar Post</h3>
                 <textarea id="edit-post-content" placeholder="Edite o conteúdo do post"></textarea>
                 <div class="modal-actions">
-                    <button onclick="confirmEditPost()">Salvar</button>
-                    <button onclick="closeEditPostModal()">Cancelar</button>
+                    <button class="modal-btn modal-btn-save" onclick="confirmEditPost()">Salvar</button>
+                    <button class="modal-btn modal-btn-cancel" onclick="closeEditPostModal()">Cancelar</button>
                 </div>
             </div>
         </div>
-        <!-- Modal para Edição de Comentário -->
         <div id="edit-comment-modal" class="modal">
             <div class="modal-content">
                 <h3>Editar Comentário</h3>
                 <textarea id="edit-comment-content" placeholder="Edite o conteúdo do comentário"></textarea>
                 <div class="modal-actions">
-                    <button onclick="confirmEditComment()">Salvar</button>
-                    <button onclick="closeEditCommentModal()">Cancelar</button>
+                    <button class="modal-btn modal-btn-save" onclick="confirmEditComment()">Salvar</button>
+                    <button class="modal-btn modal-btn-cancel" onclick="closeEditCommentModal()">Cancelar</button>
                 </div>
             </div>
         </div>
     </main>
-
-    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
